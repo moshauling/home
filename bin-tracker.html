@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Mo's Hauling – Bin Tracker</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --dark:#1C1E22;--dark2:#2A2D33;--dark3:#4B5563;
+  --orange:#D4900A;--orange2:#E07820;--orange-pale:#FDF3DC;
+  --green:#2d6a30;--green-pale:#e8f5e9;
+  --red:#b91c1c;--red-pale:#fee2e2;
+  --yellow:#b45309;--yellow-pale:#fef3c7;
+  --bg:#f3f4f6;--surface:#fff;--text:#1F2937;--muted:#6B7280;--border:#e5e7eb;
+  --nav:62px;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);height:100dvh;overflow:hidden;display:flex;flex-direction:column}
+
+/* NAV */
+nav{background:var(--dark);color:#fff;height:var(--nav);display:flex;align-items:center;padding:0 12px;gap:2px;flex-shrink:0;box-shadow:0 2px 20px rgba(0,0,0,.5)}
+.nav-logo{display:flex;align-items:center;gap:10px;margin-right:auto;text-decoration:none}
+.nav-logo img{height:36px;width:auto;object-fit:contain}
+.nav-logo-text{display:flex;flex-direction:column;line-height:1}
+.nav-logo-text span:first-child{font-family:'Oswald',sans-serif;font-size:17px;font-weight:700;color:#fff;letter-spacing:.5px}
+.nav-logo-text span:last-child{font-size:10px;color:rgba(255,255,255,.55);letter-spacing:1px;text-transform:uppercase;margin-top:1px}
+.nb{background:none;border:none;color:rgba(255,255,255,.6);padding:8px 10px;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:.15s;font-family:'Inter',sans-serif;letter-spacing:.3px;text-transform:uppercase;min-width:52px}
+.nb svg{width:20px;height:20px}
+.nb.active,.nb:hover{background:rgba(255,255,255,.12);color:#fff}
+.nb.active{border-bottom:2px solid var(--orange)}
+
+/* VIEWS */
+.view{display:none;flex:1;overflow:hidden;flex-direction:column}
+.view.active{display:flex}
+
+/* MAP / DASHBOARD */
+#view-dashboard{position:relative}
+#map{flex:1}
+.map-overlay{position:absolute;top:12px;right:12px;z-index:1000;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.stat-chip{background:#fff;border-radius:4px;padding:6px 14px;font-size:13px;font-weight:600;box-shadow:0 2px 10px rgba(0,0,0,.2);display:flex;align-items:center;gap:6px;font-family:'Oswald',sans-serif;letter-spacing:.3px}
+.dot{width:9px;height:9px;border-radius:50%}
+.dg{background:#16a34a}.dy{background:#d97706}.dr{background:#dc2626}
+
+/* SCROLL */
+.scroll-view{flex:1;overflow-y:auto;padding:16px;-webkit-overflow-scrolling:touch}
+
+/* CARDS */
+.card{background:var(--surface);border-radius:6px;padding:20px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.card-title{font-family:'Oswald',sans-serif;font-size:18px;font-weight:600;margin-bottom:16px;color:var(--dark);letter-spacing:.3px}
+
+/* SECTION HEADER (orange bar) */
+.section-hdr{background:var(--dark);color:#fff;padding:10px 20px;margin:-20px -20px 16px;border-radius:6px 6px 0 0;font-family:'Oswald',sans-serif;font-size:14px;font-weight:600;letter-spacing:1px;text-transform:uppercase}
+
+/* RENTAL CARDS */
+.rc{background:var(--surface);border-radius:6px;padding:16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);border-left:4px solid var(--green);cursor:pointer;transition:box-shadow .15s}
+.rc:active{box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.rc.overdue{border-left-color:var(--red)}
+.rc.due-soon{border-left-color:var(--yellow)}
+.rc.completed{border-left-color:#9ca3af;opacity:.7}
+.rc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.rc-name{font-family:'Oswald',sans-serif;font-size:16px;font-weight:600;letter-spacing:.2px}
+.rc-addr{font-size:13px;color:var(--muted);margin-top:2px}
+.rc-meta{display:flex;gap:12px;font-size:12px;color:var(--muted);margin-top:8px;flex-wrap:wrap}
+.rc-meta strong{color:var(--text)}
+
+/* BADGE */
+.badge{padding:3px 9px;border-radius:3px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;font-family:'Oswald',sans-serif}
+.b-active{background:var(--green-pale);color:var(--green)}
+.b-overdue{background:var(--red-pale);color:var(--red)}
+.b-due-soon{background:var(--yellow-pale);color:var(--yellow)}
+.b-completed{background:#f3f4f6;color:#9ca3af}
+
+/* BUTTONS */
+.btn{padding:11px 18px;border-radius:4px;border:none;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .15s,background .15s;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-family:'Inter',sans-serif;letter-spacing:.2px}
+.btn:active{opacity:.85}
+.btn-primary{background:var(--orange);color:#fff}
+.btn-primary:hover{background:var(--orange2)}
+.btn-dark{background:var(--dark);color:#fff}
+.btn-danger{background:var(--red);color:#fff}
+.btn-outline{background:#fff;color:var(--dark);border:2px solid var(--dark)}
+.btn-ghost{background:#f3f4f6;color:var(--text)}
+.btn-sm{padding:7px 13px;font-size:13px}
+.btn-full{width:100%}
+.btn svg{width:16px;height:16px;flex-shrink:0}
+
+/* FORMS */
+.fg{margin-bottom:16px}
+label{display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.6px}
+input,select,textarea{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:4px;font-size:16px;font-family:'Inter',sans-serif;transition:border-color .15s;background:#fff;-webkit-appearance:none;appearance:none;color:var(--text)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--orange)}
+textarea{resize:none}
+.row2{display:flex;gap:12px}
+.row2 .fg{flex:1}
+
+/* STEPPER */
+.stepper{display:flex;align-items:center;padding:12px 16px;background:var(--dark);overflow-x:auto;flex-shrink:0;gap:0}
+.step{display:flex;align-items:center;gap:5px;color:rgba(255,255,255,.35);white-space:nowrap}
+.step.active{color:#fff}
+.step.done{color:var(--orange)}
+.step-num{width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:'Oswald',sans-serif}
+.step.active .step-num{background:var(--orange);color:#fff}
+.step.done .step-num{background:var(--orange);color:#fff;font-size:13px}
+.step-lbl{font-size:11px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;font-family:'Oswald',sans-serif}
+.step-sep{flex:1;min-width:8px;height:1px;background:rgba(255,255,255,.15);margin:0 6px}
+
+/* PERIOD PICKER */
+.period-picker{display:flex;gap:12px}
+.po{flex:1;border:2px solid var(--border);border-radius:4px;padding:16px 12px;text-align:center;cursor:pointer;transition:.15s;background:#fff}
+.po.selected{border-color:var(--orange);background:var(--orange-pale)}
+.po .pd{font-family:'Oswald',sans-serif;font-size:32px;font-weight:700;color:var(--orange);line-height:1}
+.po .pl{font-size:12px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.po .pp{font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:var(--dark);margin-top:8px}
+.po .psub{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* AGREEMENT */
+.agreement-box{height:340px;overflow-y:auto;border:1.5px solid var(--border);border-radius:4px;padding:16px;font-size:13px;line-height:1.7;color:#333;background:#fafafa;margin-bottom:14px}
+.agr-header{text-align:center;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid var(--dark)}
+.agr-header .co{font-family:'Oswald',sans-serif;font-size:18px;font-weight:700;color:var(--dark);letter-spacing:.5px}
+.agr-header .title{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.agr-section{margin-bottom:12px}
+.agr-section h4{font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--dark);margin-bottom:5px;margin-top:12px}
+.agr-section p,.agr-section li{font-size:12.5px;line-height:1.65;color:#333;margin-bottom:4px}
+.agr-section ul{padding-left:18px;margin-bottom:4px}
+.agr-field{background:#fff;border:1px solid #d1d5db;border-radius:3px;padding:6px 10px;font-size:13px;font-weight:600;color:var(--dark);display:inline-block;min-width:180px}
+.agr-table{width:100%;border-collapse:collapse;margin-bottom:12px;font-size:13px}
+.agr-table td{padding:5px 8px;border:1px solid #e5e7eb;vertical-align:top}
+.agr-table td:first-child{color:var(--muted);font-weight:600;width:42%;background:#f9fafb}
+
+/* SIGNATURE */
+.sig-wrap{border:1.5px solid var(--border);border-radius:4px;background:#fff;position:relative;margin-bottom:10px;overflow:hidden}
+.sig-wrap canvas{display:block;width:100%;touch-action:none}
+.sig-hint{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#d1d5db;font-size:14px;pointer-events:none;user-select:none;font-style:italic}
+
+/* CONFIRM */
+.confirm-icon{width:68px;height:68px;border-radius:50%;background:var(--orange-pale);border:3px solid var(--orange);display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.confirm-icon svg{width:36px;height:36px}
+.action-list{list-style:none}
+.action-list li{padding:11px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;font-size:14px}
+.action-list li svg{width:20px;height:20px;flex-shrink:0}
+.action-list li:last-child{border-bottom:none}
+
+/* MODAL */
+.backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;display:none;align-items:flex-end;justify-content:center}
+.backdrop.open{display:flex}
+.modal{background:#fff;border-radius:8px 8px 0 0;padding:22px;width:100%;max-width:680px;max-height:92dvh;overflow-y:auto}
+.modal-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.modal-title{font-family:'Oswald',sans-serif;font-size:20px;font-weight:600;letter-spacing:.3px;color:var(--dark)}
+.mclose{background:#f3f4f6;border:none;width:30px;height:30px;border-radius:4px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* DETAIL */
+.d-section{margin-bottom:18px}
+.d-section h4{font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.d-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #f3f4f6;font-size:14px}
+.d-row:last-child{border-bottom:none}
+.d-key{color:var(--muted)}
+.d-val{font-weight:500;text-align:right;max-width:60%;word-break:break-word}
+
+/* FILTER */
+.filter-bar{display:flex;gap:8px;padding:12px 16px;background:var(--dark);overflow-x:auto;flex-shrink:0;border-bottom:none}
+.fc{padding:6px 14px;border-radius:3px;border:1.5px solid rgba(255,255,255,.2);background:transparent;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:.15s;font-family:'Oswald',sans-serif;letter-spacing:.4px;text-transform:uppercase;color:rgba(255,255,255,.6)}
+.fc.active{border-color:var(--orange);background:var(--orange);color:#fff}
+
+/* SETTINGS */
+.s-section{margin-bottom:22px}
+.s-section h3{font-family:'Oswald',sans-serif;font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--dark);margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--dark)}
+.info-box{border-radius:4px;padding:12px 14px;font-size:13px;line-height:1.65;margin-bottom:14px}
+.info-blue{background:#eff6ff;color:#1e40af;border-left:3px solid #3b82f6}
+.info-grey{background:#f9fafb;color:#374151;border-left:3px solid #9ca3af}
+code{background:#e5e7eb;padding:1px 5px;border-radius:3px;font-size:11.5px;font-family:monospace}
+
+/* EMPTY */
+.empty{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty svg{width:56px;height:56px;margin-bottom:14px;opacity:.2}
+.empty h3{font-family:'Oswald',sans-serif;font-size:18px;font-weight:600;margin-bottom:6px;color:var(--text);letter-spacing:.3px}
+.empty p{font-size:14px}
+
+/* SIG PREVIEW */
+.sig-img{border:1px solid var(--border);border-radius:4px;max-width:280px;display:block}
+
+/* TOAST */
+.toaster{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:4000;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:6px}
+.toast{background:var(--dark2);color:#fff;padding:10px 20px;border-radius:4px;font-size:14px;font-weight:500;white-space:nowrap;opacity:0;transition:opacity .2s;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.toast.show{opacity:1}
+.toast.ok{background:var(--green)}
+.toast.err{background:var(--red)}
+
+/* DIVIDER */
+.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
+
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:4px}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="#" onclick="nav('dashboard');return false">
+    <img src="logo.png" alt="Mo's Hauling Logo" onerror="this.style.display='none'">
+    <div class="nav-logo-text">
+      <span>MO'S HAULING</span>
+      <span>Bin Tracker</span>
+    </div>
+  </a>
+  <button class="nb active" onclick="nav('dashboard')" id="nb-dashboard">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Map
+  </button>
+  <button class="nb" onclick="nav('new-rental')" id="nb-new-rental">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+    New
+  </button>
+  <button class="nb" onclick="nav('rentals')" id="nb-rentals">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+    Rentals
+  </button>
+  <button class="nb" onclick="nav('settings')" id="nb-settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    Settings
+  </button>
+</nav>
+
+<!-- DASHBOARD -->
+<div class="view active" id="view-dashboard">
+  <div id="map"></div>
+  <div class="map-overlay" id="map-stats"></div>
+</div>
+
+<!-- NEW RENTAL -->
+<div class="view" id="view-new-rental">
+  <div class="stepper" id="stepper">
+    <div class="step active" id="si1"><div class="step-num">1</div><div class="step-lbl">Renter</div></div>
+    <div class="step-sep"></div>
+    <div class="step" id="si2"><div class="step-num">2</div><div class="step-lbl">Service</div></div>
+    <div class="step-sep"></div>
+    <div class="step" id="si3"><div class="step-num">3</div><div class="step-lbl">Agreement</div></div>
+    <div class="step-sep"></div>
+    <div class="step" id="si4"><div class="step-num">4</div><div class="step-lbl">Signature</div></div>
+    <div class="step-sep"></div>
+    <div class="step" id="si5"><div class="step-num">5</div><div class="step-lbl">Confirm</div></div>
+  </div>
+  <div class="scroll-view" id="step-content"></div>
+</div>
+
+<!-- RENTALS -->
+<div class="view" id="view-rentals">
+  <div class="filter-bar">
+    <button class="fc active" onclick="setFilter('all')">All</button>
+    <button class="fc" onclick="setFilter('active')">Active</button>
+    <button class="fc" onclick="setFilter('due-soon')">Due Today</button>
+    <button class="fc" onclick="setFilter('overdue')">Overdue</button>
+    <button class="fc" onclick="setFilter('completed')">Completed</button>
+  </div>
+  <div class="scroll-view" id="rentals-list"></div>
+</div>
+
+<!-- SETTINGS -->
+<div class="view" id="view-settings">
+  <div class="scroll-view">
+    <div class="s-section">
+      <h3>EmailJS Configuration</h3>
+      <div class="info-box info-blue">
+        <strong>Setup (free, ~5 min):</strong><br>
+        1. Sign up at <strong>emailjs.com</strong> — 200 emails/month free<br>
+        2. Connect Gmail as an Email Service<br>
+        3. Create a Template using the variables listed below<br>
+        4. Paste your 3 credentials here — emails fire automatically on each signed rental
+      </div>
+      <div class="fg"><label>Public Key</label><input type="text" id="s-pk" placeholder="your_public_key" oninput="saveSetting()"></div>
+      <div class="fg"><label>Service ID</label><input type="text" id="s-sid" placeholder="service_xxxxxxx" oninput="saveSetting()"></div>
+      <div class="fg"><label>Template ID</label><input type="text" id="s-tid" placeholder="template_xxxxxxx" oninput="saveSetting()"></div>
+      <button class="btn btn-outline btn-sm" onclick="testEmail()">Send Test Email to Owner</button>
+    </div>
+
+    <div class="s-section">
+      <h3>Template Variables</h3>
+      <div class="info-box info-grey">
+        Set the <strong>To</strong> field in your template to <code>{{to_email}}</code>.<br><br>
+        <code>{{to_email}}</code> &nbsp;·&nbsp; <code>{{reply_to}}</code><br>
+        <code>{{customer_name}}</code> &nbsp;·&nbsp; <code>{{customer_phone}}</code><br>
+        <code>{{renter_address}}</code> &nbsp;·&nbsp; <code>{{service_address}}</code><br>
+        <code>{{dropoff_date}}</code> &nbsp;·&nbsp; <code>{{pickup_date}}</code><br>
+        <code>{{rental_days}}</code> &nbsp;·&nbsp; <code>{{price}}</code><br>
+        <code>{{agreement_id}}</code> &nbsp;·&nbsp; <code>{{signed_at}}</code><br>
+        <code>{{signature_img}}</code> — use as <code>&lt;img src="{{signature_img}}"&gt;</code><br>
+        <code>{{agreement_html}}</code> — full agreement
+      </div>
+    </div>
+
+    <div class="s-section">
+      <h3>Business Info</h3>
+      <div class="fg"><label>Owner Email</label><input type="email" id="s-oe" value="eric@moshauling.co" oninput="saveSetting()"></div>
+      <div class="fg"><label>Business Phone</label><input type="tel" id="s-bp" placeholder="(720) 341-8144" oninput="saveSetting()"></div>
+      <div class="fg"><label>Mo's Hauling Rep Name (appears on agreement)</label><input type="text" id="s-rep" placeholder="Eric Dale" oninput="saveSetting()"></div>
+    </div>
+
+    <div class="s-section">
+      <h3>Data</h3>
+      <button class="btn btn-danger btn-sm" onclick="clearAll()">Clear All Rental Records</button>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="backdrop" id="detail-backdrop">
+  <div class="modal" id="detail-modal"></div>
+</div>
+
+<!-- TOAST -->
+<div class="toaster" id="toaster"></div>
+
+<!-- SCRIPTS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.5/dist/signature_pad.umd.min.js"></script>
+<script>
+// ─────────────────────────────────────────────
+// STORAGE
+// ─────────────────────────────────────────────
+const Store={
+  rentals(){return JSON.parse(localStorage.getItem('mh_r')||'[]')},
+  saveRentals(r){localStorage.setItem('mh_r',JSON.stringify(r))},
+  settings(){
+    return JSON.parse(localStorage.getItem('mh_s')||JSON.stringify({
+      pk:'UArlcTXupXk48WJ10',sid:'service_nnqpehg',tid:'template_56np39x',
+      ownerEmail:'eric@moshauling.co',
+      phone:'(720) 341-8144',rep:'Eric Dale'
+    }))
+  },
+  saveSettings(s){localStorage.setItem('mh_s',JSON.stringify(s))},
+};
+
+const PRICE={3:300,7:365};
+const BIN='15 Cubic Yard Roll-Off';
+const EXTRA_DAY=30;
+const OVERAGE_TON=75;
+
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+
+// ─────────────────────────────────────────────
+// RENTAL STATUS
+// ─────────────────────────────────────────────
+function rentalStatus(r){
+  if(r.status==='completed') return 'completed';
+  const h=(new Date(r.service.pickupDate)-Date.now())/3600000;
+  if(h<0) return 'overdue';
+  if(h<24) return 'due-soon';
+  return 'active';
+}
+function badge(s){
+  const m={active:['b-active','Active'],overdue:['b-overdue','Overdue'],'due-soon':['b-due-soon','Due Today'],completed:['b-completed','Done']};
+  const[c,l]=m[s]||m.active;
+  return`<span class="badge ${c}">${l}</span>`;
+}
+
+// ─────────────────────────────────────────────
+// NAVIGATION
+// ─────────────────────────────────────────────
+function nav(v){
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  document.getElementById('nb-'+v).classList.add('active');
+  if(v==='dashboard'){setTimeout(()=>MAP.invalidateSize(),80);refreshMap()}
+  if(v==='rentals') renderList();
+  if(v==='new-rental') initForm();
+  if(v==='settings') loadSettingsUI();
+}
+
+// ─────────────────────────────────────────────
+// MAP
+// ─────────────────────────────────────────────
+const MAP=L.map('map',{zoomControl:true}).setView([39.7392,-104.9903],11);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{
+  attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
+  subdomains:'abcd',maxZoom:20
+}).addTo(MAP);
+
+function mkIcon(color,size=18){
+  return L.divIcon({
+    html:`<div style="background:${color};width:${size}px;height:${size}px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5)"></div>`,
+    iconSize:[size,size],iconAnchor:[size/2,size/2]
+  });
+}
+const ICONS={
+  active:mkIcon('#16a34a'),
+  'due-soon':mkIcon('#d97706'),
+  overdue:mkIcon('#dc2626'),
+  completed:mkIcon('#9ca3af',14)
+};
+
+let markers=[];
+function refreshMap(){
+  markers.forEach(m=>MAP.removeLayer(m));markers=[];
+  const rs=Store.rentals();
+  let act=0,od=0,ds=0;
+  rs.forEach(r=>{
+    if(!r.service.lat||!r.service.lng) return;
+    const s=rentalStatus(r);
+    if(s==='active') act++;
+    if(s==='overdue') od++;
+    if(s==='due-soon') ds++;
+    const m=L.marker([r.service.lat,r.service.lng],{icon:ICONS[s]||ICONS.active})
+      .addTo(MAP)
+      .bindPopup(`
+        <div style="min-width:220px;font-family:'Inter',sans-serif">
+          <div style="font-family:'Oswald',sans-serif;font-size:15px;font-weight:700;color:#1C1E22;margin-bottom:4px">${esc(r.customer.name)}</div>
+          <div style="font-size:13px;color:#6B7280;margin-bottom:8px">${esc(r.service.address)}</div>
+          <div style="font-size:12px;margin-bottom:2px"><b>Drop-off:</b> ${fmtD(r.service.dropoffDate)}</div>
+          <div style="font-size:12px;margin-bottom:10px"><b>Pick-up:</b> ${fmtD(r.service.pickupDate)}</div>
+          <button onclick="showDetail('${r.id}')" style="background:#D4900A;color:#fff;border:none;padding:8px 14px;border-radius:4px;font-size:13px;cursor:pointer;width:100%;font-weight:600">View Details</button>
+        </div>`);
+    markers.push(m);
+  });
+  const el=document.getElementById('map-stats');
+  el.innerHTML=`<div class="stat-chip"><div class="dot dg"></div>${act} Active</div>`
+    +(ds?`<div class="stat-chip"><div class="dot dy"></div>${ds} Due Today</div>`:'')
+    +(od?`<div class="stat-chip"><div class="dot dr"></div>${od} Overdue</div>`:'');
+}
+
+// ─────────────────────────────────────────────
+// GEOCODE
+// ─────────────────────────────────────────────
+async function geocode(addr){
+  try{
+    const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr)}&limit=1&countrycodes=us`);
+    const d=await r.json();
+    if(d.length) return{lat:+d[0].lat,lng:+d[0].lon};
+  }catch(e){}
+  return null;
+}
+
+// ─────────────────────────────────────────────
+// NEW RENTAL FORM
+// ─────────────────────────────────────────────
+let step=1, draft={}, sigPad=null;
+
+function initForm(){step=1;draft={};renderStep(1);updateStepper(1)}
+
+function updateStepper(s){
+  for(let i=1;i<=5;i++){
+    const el=document.getElementById('si'+i);
+    if(i<s){el.className='step done';el.querySelector('.step-num').textContent='✓'}
+    else if(i===s){el.className='step active';el.querySelector('.step-num').textContent=i}
+    else{el.className='step';el.querySelector('.step-num').textContent=i}
+  }
+}
+
+function renderStep(s){
+  step=s;updateStepper(s);
+  const el=document.getElementById('step-content');
+  el.scrollTop=0;
+
+  if(s===1){
+    el.innerHTML=`
+    <div class="card">
+      <div class="section-hdr">Renter Information</div>
+      <div class="fg"><label>Full Name *</label><input id="f-name" type="text" value="${esc(draft.name||'')}" placeholder="John Smith" autocomplete="name"></div>
+      <div class="fg"><label>Home / Billing Address *</label><input id="f-raddr" type="text" value="${esc(draft.renterAddress||'')}" placeholder="1234 Oak Street" autocomplete="address-line1"></div>
+      <div class="row2">
+        <div class="fg" style="flex:2"><label>City</label><input id="f-rcity" type="text" value="${esc(draft.renterCity||'')}" placeholder="Denver" autocomplete="address-level2"></div>
+        <div class="fg" style="flex:1"><label>State</label><input id="f-rst" type="text" value="${esc(draft.renterState||'CO')}" placeholder="CO" maxlength="2"></div>
+        <div class="fg" style="flex:1"><label>Zip</label><input id="f-rzip" type="text" value="${esc(draft.renterZip||'')}" placeholder="80202" autocomplete="postal-code" inputmode="numeric" maxlength="5"></div>
+      </div>
+      <div class="fg"><label>Phone *</label><input id="f-phone" type="tel" value="${esc(draft.phone||'')}" placeholder="(720) 555-0100" autocomplete="tel"></div>
+      <div class="fg"><label>Email Address *</label><input id="f-email" type="email" value="${esc(draft.email||'')}" placeholder="john@email.com" autocomplete="email"></div>
+      <button class="btn btn-primary btn-full" onclick="s1next()">Continue →</button>
+    </div>`;
+  }
+
+  else if(s===2){
+    const now=new Date();
+    const dtDef=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,16);
+    el.innerHTML=`
+    <div class="card">
+      <div class="section-hdr">Service Details</div>
+      <div class="fg">
+        <label>Drop-Off Location Address *</label>
+        <input id="f-addr" type="text" value="${esc(draft.address||'')}" placeholder="4321 Elm Ave, Denver, CO 80211" autocomplete="street-address">
+      </div>
+      <div class="fg"><label>Drop-off Date & Time *</label><input id="f-dt" type="datetime-local" value="${draft.dropoffDate||dtDef}"></div>
+      <div class="fg">
+        <label>Rental Period</label>
+        <div class="period-picker">
+          <div class="po ${draft.rentalDays===3?'selected':''}" onclick="selPeriod(3)">
+            <div class="pd">3</div>
+            <div class="pl">Days</div>
+            <div class="pp">$${PRICE[3]}</div>
+            <div class="psub">incl. up to 2 tons</div>
+          </div>
+          <div class="po ${draft.rentalDays!==3?'selected':''}" onclick="selPeriod(7)">
+            <div class="pd">7</div>
+            <div class="pl">Days</div>
+            <div class="pp">$${PRICE[7]}</div>
+            <div class="psub">incl. up to 2 tons</div>
+          </div>
+        </div>
+      </div>
+      <div class="fg" style="background:#f9fafb;border:1.5px solid var(--border);border-radius:4px;padding:12px">
+        <label style="margin-bottom:4px">Container</label>
+        <div style="font-family:'Oswald',sans-serif;font-size:16px;font-weight:600;color:var(--dark)">15 Cubic Yard Roll-Off</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">Includes delivery, pickup &amp; disposal of up to 2 tons (4,000 lbs)</div>
+      </div>
+      <div class="fg">
+        <label>Discount ($) — optional</label>
+        <input id="f-disc" type="number" min="0" value="${draft.discount||''}" placeholder="0" oninput="updatePriceSummary()">
+      </div>
+      <div id="price-summary" style="background:var(--dark);color:#fff;border-radius:4px;padding:12px 14px;margin-bottom:16px;display:none">
+        <div style="display:flex;justify-content:space-between;font-size:13px;opacity:.75;margin-bottom:4px">
+          <span>Base price</span><span id="ps-base"></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:#f9a825;margin-bottom:8px" id="ps-disc-row">
+          <span>Discount</span><span id="ps-disc"></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-family:'Oswald',sans-serif;font-size:18px;font-weight:700;border-top:1px solid rgba(255,255,255,.2);padding-top:8px">
+          <span>Total Due</span><span id="ps-total"></span>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-ghost" onclick="renderStep(1)">← Back</button>
+        <button class="btn btn-primary" style="flex:1" onclick="s2next()">Continue →</button>
+      </div>
+    </div>`;
+    if(!draft.rentalDays) selPeriod(7);
+    updatePriceSummary();
+  }
+
+  else if(s===3){
+    const pu=new Date(draft.dropoffDate);
+    pu.setDate(pu.getDate()+draft.rentalDays);
+    draft.pickupDate=pu.toISOString();
+    el.innerHTML=`
+    <div class="card">
+      <div class="section-hdr">Roll-Off Dumpster Rental Agreement</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Please read the full agreement. The renter must scroll through before proceeding to sign.</p>
+      <div class="agreement-box">${agreementHTML(draft)}</div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-ghost" onclick="renderStep(2)">← Back</button>
+        <button class="btn btn-primary" style="flex:1" onclick="renderStep(4)">I Have Read — Proceed to Sign →</button>
+      </div>
+    </div>`;
+  }
+
+  else if(s===4){
+    const cfg=Store.settings();
+    const today=fmtD(new Date().toISOString());
+    el.innerHTML=`
+    <div class="card">
+      <div class="section-hdr">Signature & Authorization</div>
+      <div style="background:#fafafa;border:1.5px solid var(--border);border-radius:4px;padding:14px;margin-bottom:16px;font-size:13.5px;line-height:1.7">
+        <p><strong>By signing below, I, ${esc(draft.name)}, acknowledge that I have read, understand, and agree to all terms and conditions of this Roll-Off Dumpster Rental Agreement with Mo's Hauling, LLC, dated ${today}.</strong></p>
+        <p style="margin-top:10px">I further authorize Mo's Hauling, LLC to charge any additional fees to my payment method on file, including overweight charges, extended rental fees, contamination fees, trip fees, and damage costs.</p>
+      </div>
+
+      <label>Renter Signature *</label>
+      <div class="sig-wrap" id="sig-wrap">
+        <canvas id="sig-canvas" height="200"></canvas>
+        <div class="sig-hint" id="sig-hint">Sign here with finger or stylus</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="font-size:12px;color:var(--muted)">Date: <strong>${today}</strong></div>
+        <button class="btn btn-ghost btn-sm" onclick="clearSig()">Clear</button>
+      </div>
+
+      <hr class="divider">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:16px">
+        <strong>Mo's Hauling, LLC Representative:</strong> ${esc(cfg.rep||'Eric Dale')}<br>
+        <span style="font-size:12px">Authorized signature on file with Mo's Hauling, LLC</span>
+      </div>
+
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-ghost" onclick="renderStep(3)">← Back</button>
+        <button class="btn btn-primary" style="flex:1" onclick="s4next()">Submit Signed Agreement →</button>
+      </div>
+    </div>`;
+
+    const canvas=document.getElementById('sig-canvas');
+    const dpr=window.devicePixelRatio||1;
+    canvas.width=(canvas.offsetWidth||640)*dpr;
+    canvas.height=200*dpr;
+    canvas.style.width='100%';
+    canvas.style.height='200px';
+    const ctx=canvas.getContext('2d');
+    ctx.scale(dpr,dpr);
+    sigPad=new SignaturePad(canvas,{backgroundColor:'rgb(255,255,255)',penColor:'rgb(0,0,0)'});
+    sigPad.addEventListener('beginStroke',()=>{
+      const h=document.getElementById('sig-hint');
+      if(h) h.style.display='none';
+    });
+  }
+
+  else if(s===5){
+    el.innerHTML=`
+    <div class="card" style="text-align:center">
+      <div class="confirm-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#D4900A" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <div style="font-family:'Oswald',sans-serif;font-size:22px;font-weight:700;margin-bottom:6px;letter-spacing:.3px">Agreement Signed</div>
+      <div style="color:var(--muted);font-size:13px;margin-bottom:24px">Agreement #<strong style="color:var(--dark)">${(draft.id||'').toUpperCase()}</strong></div>
+
+      <ul class="action-list" style="text-align:left;margin-bottom:22px">
+        <li id="al-email">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,12 2,6"/></svg>
+          <span>Sending agreement to renter &amp; owner…</span>
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span>Calendar events ready — download below</span>
+        </li>
+      </ul>
+
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
+        <button class="btn btn-dark btn-full" onclick="dlCal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 2v4M16 2v4"/></svg>
+          Download Both Calendar Events (.ics)
+        </button>
+        <button class="btn btn-outline btn-full" onclick="gCal('dropoff')">Add Drop-off to Google Calendar</button>
+        <button class="btn btn-outline btn-full" onclick="gCal('pickup')">Add Pick-up to Google Calendar</button>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="nav('dashboard')">Done — View Map</button>
+    </div>`;
+    finishRental();
+  }
+}
+
+function selPeriod(d){
+  draft.rentalDays=d;
+  document.querySelectorAll('.po').forEach((el,i)=>
+    el.classList.toggle('selected',(i===0&&d===3)||(i===1&&d===7))
+  );
+  updatePriceSummary();
+}
+
+function updatePriceSummary(){
+  if(!draft.rentalDays) return;
+  const base=PRICE[draft.rentalDays];
+  const discInput=document.getElementById('f-disc');
+  const disc=discInput?Math.max(0,parseFloat(discInput.value)||0):draft.discount||0;
+  draft.discount=disc;
+  const total=Math.max(0,base-disc);
+  draft.price=total;
+  const summary=document.getElementById('price-summary');
+  if(!summary) return;
+  summary.style.display='block';
+  document.getElementById('ps-base').textContent='$'+base;
+  document.getElementById('ps-disc').textContent=disc>0?'-$'+disc:'—';
+  document.getElementById('ps-disc-row').style.opacity=disc>0?'1':'0.4';
+  document.getElementById('ps-total').textContent='$'+total;
+}
+
+function s1next(){
+  const name=v('f-name'),raddr=v('f-raddr'),rcity=v('f-rcity'),rst=v('f-rst'),rzip=v('f-rzip'),phone=v('f-phone'),email=v('f-email');
+  if(!name||!phone||!email){toast('Name, phone and email are required','err');return}
+  if(!email.includes('@')){toast('Enter a valid email address','err');return}
+  Object.assign(draft,{name,renterAddress:raddr,renterCity:rcity,renterState:rst,renterZip:rzip,phone,email});
+  renderStep(2);
+}
+
+async function s2next(){
+  const addr=v('f-addr'),dt=v('f-dt');
+  if(!addr||!dt){toast('Drop-off address and date/time are required','err');return}
+  if(!draft.rentalDays){toast('Select a rental period','err');return}
+  draft.address=addr;draft.dropoffDate=dt;
+  toast('Locating address on map…');
+  const geo=await geocode(addr);
+  if(geo){draft.lat=geo.lat;draft.lng=geo.lng}
+  else toast('Address not found on map — you can still continue','err');
+  renderStep(3);
+}
+
+function clearSig(){
+  if(sigPad) sigPad.clear();
+  const h=document.getElementById('sig-hint');
+  if(h) h.style.display='block';
+}
+
+function s4next(){
+  if(!sigPad||sigPad.isEmpty()){toast('Renter signature is required','err');return}
+  // JPEG at 0.5 quality keeps payload ~15-25KB, well under EmailJS 50KB limit
+  draft.sigDataUrl=sigPad.toDataURL('image/jpeg',0.5);
+  draft.signedAt=new Date().toISOString();
+  draft.id=uid();
+  renderStep(5);
+}
+
+async function finishRental(){
+  const pu=new Date(draft.dropoffDate);
+  pu.setDate(pu.getDate()+draft.rentalDays);
+  const rental={
+    id:draft.id,
+    customer:{
+      name:draft.name,email:draft.email,phone:draft.phone,
+      renterAddress:draft.renterAddress,renterCity:draft.renterCity,
+      renterState:draft.renterState,renterZip:draft.renterZip
+    },
+    service:{
+      address:draft.address,lat:draft.lat,lng:draft.lng,
+      dropoffDate:draft.dropoffDate,rentalDays:draft.rentalDays,
+      pickupDate:pu.toISOString(),price:draft.price
+    },
+    agreement:{sigDataUrl:draft.sigDataUrl,signedAt:draft.signedAt},
+    status:'active',createdAt:new Date().toISOString(),
+  };
+  const rs=Store.rentals();rs.push(rental);Store.saveRentals(rs);
+  await sendEmails(rental);
+  const el=document.getElementById('al-email');
+  if(el) el.querySelector('svg').setAttribute('stroke','#16a34a');
+}
+
+// ─────────────────────────────────────────────
+// AGREEMENT HTML
+// ─────────────────────────────────────────────
+function agreementHTML(d,isEmail=false){
+  const cfg=Store.settings();
+  const csz=[d.renterCity,d.renterState,d.renterZip].filter(Boolean).join(', ')||'&nbsp;';
+  const fullRenterAddr=d.renterAddress?`${d.renterAddress}, ${csz}`:'';
+  const rentalPeriodText=d.rentalDays===3?'Three (3) Calendar Days':'Seven (7) Calendar Days';
+  const rentalFee=d.price?`$${d.price}.00`:'$______';
+  const wrapStyle=isEmail?'font-family:Arial,sans-serif;max-width:680px;margin:0 auto;':'';
+
+  return`<div style="${wrapStyle}">
+
+<div class="agr-header">
+  <div class="co">MO'S HAULING, LLC</div>
+  <div class="title">Roll-Off Dumpster Rental Agreement</div>
+  ${d.id?`<div style="font-size:11px;color:#9ca3af;margin-top:4px">Agreement #${d.id.toUpperCase()}</div>`:''}
+</div>
+
+<p style="font-size:12.5px;line-height:1.65;margin-bottom:10px">This Rental Agreement ("<strong>Agreement</strong>") is made and entered into as of:</p>
+<table class="agr-table">
+  <tr><td>Agreement Date</td><td><span class="agr-field">${d.signedAt?fmtD(d.signedAt):fmtD(new Date().toISOString())}</span></td></tr>
+  <tr><td>Renter</td><td><span class="agr-field">${esc(d.name||'')}</span></td></tr>
+  <tr><td>Renter Address</td><td><span class="agr-field">${esc(d.renterAddress||'')}</span></td></tr>
+  <tr><td>City / State / Zip</td><td><span class="agr-field">${esc(csz)}</span></td></tr>
+  <tr><td>Phone</td><td><span class="agr-field">${esc(d.phone||'')}</span></td></tr>
+  <tr><td>Email</td><td><span class="agr-field">${esc(d.email||'')}</span></td></tr>
+</table>
+
+<div class="agr-section">
+<h4>1. Rental Terms</h4>
+<table class="agr-table">
+  <tr><td>Dumpster Size</td><td>${BIN}</td></tr>
+  <tr><td>Rental Fee</td><td><strong>${rentalFee}</strong></td></tr>
+  <tr><td>Rental Period</td><td>${rentalPeriodText}</td></tr>
+  <tr><td>Delivery Date</td><td><span class="agr-field">${d.dropoffDate?fmtD(d.dropoffDate):''}</span></td></tr>
+  <tr><td>Scheduled Pickup Date</td><td><span class="agr-field">${d.pickupDate?fmtD(d.pickupDate):''}</span></td></tr>
+  <tr><td>Drop-Off Location</td><td><span class="agr-field">${esc(d.address||'')}</span></td></tr>
+</table>
+<p>Rental includes delivery, pickup, and disposal of up to two (2) tons (4,000 lbs) of waste.</p>
+</div>
+
+<div class="agr-section">
+<h4>2. Payment Terms &amp; Authorization</h4>
+<p>Full payment is due prior to or upon delivery. Renter authorizes Company to charge any additional fees to the payment method on file, including but not limited to: overweight charges, extended rental fees, contamination fees, trip fees, and damage or repair costs.</p>
+</div>
+
+<div class="agr-section">
+<h4>3. Overweight Charges</h4>
+<ul>
+<li>Any weight exceeding two (2) tons shall be charged at <strong>$${OVERAGE_TON} per additional ton</strong></li>
+<li>All overages shall be rounded up to the nearest whole ton</li>
+<li>Weight shall be determined solely by landfill scale tickets, which shall be final and binding</li>
+</ul>
+</div>
+
+<div class="agr-section">
+<h4>4. Extended Rental Period</h4>
+<ul>
+<li>Each additional day beyond the rental period shall be charged at <strong>$${EXTRA_DAY} per day</strong></li>
+<li>Charges begin automatically unless prior arrangements are made with Company</li>
+</ul>
+</div>
+
+<div class="agr-section">
+<h4>5. Prohibited Materials</h4>
+<p>Renter shall NOT place the following materials in the dumpster:</p>
+<ul>
+<li>Hazardous, toxic, or regulated waste; chemicals, solvents, oils, fuels</li>
+<li>Paint (unless fully dried), tires, batteries</li>
+<li>Asbestos-containing materials; appliances containing refrigerants (Freon)</li>
+<li>Flammable or explosive materials</li>
+<li>Heavy construction materials: concrete, gravel, dirt, asphalt, brick, stone, or similar dense materials</li>
+</ul>
+<p>If prohibited materials are discovered, Renter shall be liable for all removal costs, landfill penalties, regulatory fines, and administrative fees.</p>
+</div>
+
+<div class="agr-section">
+<h4>6. Right to Refuse Service / Load</h4>
+<p>Company reserves the right, at its sole discretion, to refuse delivery or pickup, or refuse to haul any container deemed unsafe, overloaded, or in violation of this Agreement. If service cannot be completed, trip fees and downtime charges may apply.</p>
+</div>
+
+<div class="agr-section">
+<h4>7. Loading Requirements</h4>
+<ul>
+<li>Materials must not exceed the top edge of the container ("level load" requirement)</li>
+<li>No material may protrude or create unsafe transport conditions</li>
+<li>Renter assumes all responsibility for loading and contents</li>
+<li>Overloaded dumpsters may be refused for pickup until corrected</li>
+</ul>
+</div>
+
+<div class="agr-section">
+<h4>8. Access &amp; Trip Fees</h4>
+<p>Renter agrees to provide safe and unobstructed access for delivery and pickup at all times. If Company is unable to perform delivery or pickup due to blocked access, vehicles in the way, or unsafe conditions, a trip charge per Company's current rate schedule may be assessed.</p>
+</div>
+
+<div class="agr-section">
+<h4>9. Damage &amp; Site Liability</h4>
+<p>Renter acknowledges that placement and removal of dumpsters may cause surface damage. Renter assumes full responsibility for any damage to driveways (including cracking or sinking), pavement or curbs, landscaping, and underground utilities. Company shall not be liable for such damages unless caused by gross negligence.</p>
+</div>
+
+<div class="agr-section">
+<h4>10. Relocation &amp; Tampering</h4>
+<p>Dumpster shall not be moved, relocated, or altered without written consent from Company. Renter is responsible for any theft, vandalism, or unauthorized use while on-site.</p>
+</div>
+
+<div class="agr-section">
+<h4>11. Contamination &amp; Landfill Pass-Through</h4>
+<p>Renter agrees to pay all additional charges imposed by disposal facilities, including contamination fees, sorting fees, environmental surcharges, and special handling costs. Company reserves the right to add a reasonable administrative fee for handling such issues.</p>
+</div>
+
+<div class="agr-section">
+<h4>12. Indemnification</h4>
+<p>Renter agrees to indemnify, defend, and hold harmless Mo's Hauling, LLC, its owners, employees, and agents from any and all claims, damages, liabilities, losses, or expenses arising out of use of the dumpster, contents placed within, or violation of this Agreement.</p>
+</div>
+
+<div class="agr-section">
+<h4>13. Limitation of Liability</h4>
+<p>To the fullest extent permitted by law, Company shall not be liable for incidental, consequential, or indirect damages. Company's total liability, if any, shall not exceed the rental fee paid.</p>
+</div>
+
+<div class="agr-section">
+<h4>14. Default &amp; Collections</h4>
+<p>If Renter fails to pay any balance due, the account may be sent to collections. Renter agrees to pay all collection costs, reasonable attorney's fees, and court costs. Interest may accrue per Colorado statute on unpaid balances.</p>
+</div>
+
+<div class="agr-section">
+<h4>15. Governing Law</h4>
+<p>This Agreement shall be governed by and construed in accordance with the laws of the State of Colorado.</p>
+</div>
+
+<div class="agr-section">
+<h4>16. Entire Agreement</h4>
+<p>This Agreement constitutes the entire agreement between the parties and supersedes all prior discussions or agreements. No modifications shall be valid unless in writing and signed by both parties.</p>
+</div>
+
+<div class="agr-section">
+<h4>17. Acceptance</h4>
+<p>By signing below, Renter acknowledges and agrees to all terms and conditions herein.</p>
+</div>
+
+</div>`;
+}
+
+// ─────────────────────────────────────────────
+// CALENDAR (ICS)
+// ─────────────────────────────────────────────
+function icsDate(iso){return new Date(iso).toISOString().replace(/[-:.]/g,'').slice(0,15)+'Z'}
+function makeEvent(evUid,summary,desc,loc,startIso){
+  const e=new Date(new Date(startIso).getTime()+7200000);
+  return['BEGIN:VEVENT',`UID:${evUid}`,'DTSTAMP:'+icsDate(new Date().toISOString()),
+    'DTSTART:'+icsDate(startIso),'DTEND:'+icsDate(e.toISOString()),
+    `SUMMARY:${summary}`,`DESCRIPTION:${desc.replace(/\n/g,'\\n')}`,
+    `LOCATION:${loc}`,'END:VEVENT'].join('\r\n');
+}
+
+function dlCal(){
+  const d=draft;
+  const desc=`Renter: ${d.name}\nPhone: ${d.phone}\nContainer: ${BIN}\nAgreement: #${(d.id||'').toUpperCase()}`;
+  const short=d.address.split(',')[0];
+  const ev1=makeEvent(`dropoff-${d.id}@moshauling.co`,`Drop-off – ${short}`,desc,d.address,d.dropoffDate);
+  const ev2=makeEvent(`pickup-${d.id}@moshauling.co`,`Pick-up – ${short}`,desc,d.address,d.pickupDate);
+  const ics="BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Mo's Hauling//Bin Tracker//EN\r\nCALSCALE:GREGORIAN\r\n"+ev1+'\r\n'+ev2+'\r\nEND:VCALENDAR';
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([ics],{type:'text/calendar'}));
+  a.download=`mos-hauling-${d.id||'rental'}.ics`;
+  a.click();
+  toast('Calendar file downloaded','ok');
+}
+
+function gCal(type){
+  const isD=type==='dropoff';
+  const start=new Date(isD?draft.dropoffDate:draft.pickupDate);
+  const end=new Date(start.getTime()+7200000);
+  const title=(isD?'Bin Drop-off':'Bin Pick-up')+' – '+draft.address.split(',')[0];
+  const details=`Renter: ${draft.name}\nPhone: ${draft.phone}\nContainer: ${BIN}\nAgreement #${(draft.id||'').toUpperCase()}`;
+  const fmt=d=>d.toISOString().replace(/[-:.]/g,'').slice(0,15)+'Z';
+  window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${fmt(start)}/${fmt(end)}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(draft.address)}`,'_blank');
+}
+
+// ─────────────────────────────────────────────
+// EMAIL (EmailJS)
+// ─────────────────────────────────────────────
+async function loadEJS(){
+  if(window.emailjs) return;
+  await new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
+    s.onload=res;s.onerror=rej;document.head.appendChild(s);
+  });
+}
+
+// Shrink signature to 260×70 JPEG ~3-4KB — safe for EmailJS 50KB payload limit
+function compressSig(dataUrl){
+  return new Promise(resolve=>{
+    const img=new Image();
+    img.onload=()=>{
+      const c=document.createElement('canvas');
+      c.width=260;c.height=70;
+      const ctx=c.getContext('2d');
+      ctx.fillStyle='#fff';ctx.fillRect(0,0,260,70);
+      ctx.drawImage(img,0,0,260,70);
+      resolve(c.toDataURL('image/jpeg',0.45));
+    };
+    img.onerror=()=>resolve('');
+    img.src=dataUrl;
+  });
+}
+
+async function sendEmails(rental){
+  const cfg=Store.settings();
+  if(!cfg.pk||!cfg.sid||!cfg.tid){console.log('EmailJS not configured');return}
+  try{
+    await loadEJS();
+    emailjs.init(cfg.pk);
+    console.log('[MH] EmailJS loaded & initialised');
+    const csz=[rental.customer.renterCity,rental.customer.renterState,rental.customer.renterZip].filter(Boolean).join(', ');
+    const sigImg=await compressSig(rental.agreement.sigDataUrl);
+    console.log('[MH] Signature compressed, size chars:',sigImg.length);
+    const params={
+      customer_name:rental.customer.name,
+      customer_phone:rental.customer.phone,
+      renter_address:`${rental.customer.renterAddress||''}, ${csz}`,
+      service_address:rental.service.address,
+      dropoff_date:fmtD(rental.service.dropoffDate),
+      pickup_date:fmtD(rental.service.pickupDate),
+      rental_days:rental.service.rentalDays,
+      price:'$'+rental.service.price,
+      agreement_id:rental.id.toUpperCase(),
+      signed_at:fmtD(rental.agreement.signedAt),
+      signature_img:sigImg,
+    };
+    console.log('[MH] Sending to renter:',rental.customer.email);
+    try{
+      const r1=await emailjs.send(cfg.sid,cfg.tid,{...params,to_email:rental.customer.email,reply_to:cfg.ownerEmail});
+      console.log('[MH] Renter email result:',r1.status,r1.text);
+    }catch(e1){
+      console.error('[MH] Renter email FAILED:',e1);
+      toast('Renter email failed — check F12 console','err');
+    }
+    console.log('[MH] Sending to owner:',cfg.ownerEmail);
+    try{
+      const r2=await emailjs.send(cfg.sid,cfg.tid,{...params,to_email:cfg.ownerEmail,reply_to:rental.customer.email});
+      console.log('[MH] Owner email result:',r2.status,r2.text);
+      toast('Emails sent','ok');
+    }catch(e2){
+      console.error('[MH] Owner email FAILED:',e2);
+      toast('Owner email failed — check F12 console','err');
+    }
+  }catch(e){
+    console.error('[MH] Email setup error:',e);
+    toast('Email setup failed — check F12 console','err');
+  }
+}
+
+async function testEmail(){
+  const cfg=Store.settings();
+  if(!cfg.pk||!cfg.sid||!cfg.tid){toast('Fill in EmailJS credentials first','err');return}
+  toast('Sending test…');
+  try{
+    await loadEJS();emailjs.init(cfg.pk);
+    await emailjs.send(cfg.sid,cfg.tid,{
+      to_email:cfg.ownerEmail,reply_to:cfg.ownerEmail,
+      customer_name:'Test Renter',customer_phone:'(720) 555-0100',
+      renter_address:'123 Test St, Denver, CO 80202',
+      service_address:'456 Drop-off Ave, Denver, CO',
+      dropoff_date:fmtD(new Date().toISOString()),
+      pickup_date:fmtD(new Date(Date.now()+7*864e5).toISOString()),
+      rental_days:7,price:'$365',agreement_id:'TEST-001',
+      signed_at:fmtD(new Date().toISOString()),
+      signature_img:'',agreement_html:'<p>Test agreement content.</p>',
+    });
+    toast('Test email sent to '+cfg.ownerEmail,'ok');
+  }catch(e){toast('Failed: '+(e.text||e.message),'err')}
+}
+
+// ─────────────────────────────────────────────
+// RENTALS LIST
+// ─────────────────────────────────────────────
+let curFilter='all';
+function setFilter(f){
+  curFilter=f;
+  document.querySelectorAll('.fc').forEach((el,i)=>
+    el.classList.toggle('active',['all','active','due-soon','overdue','completed'][i]===f)
+  );
+  renderList();
+}
+
+function renderList(){
+  const el=document.getElementById('rentals-list');if(!el) return;
+  let rs=Store.rentals().filter(r=>{
+    const s=rentalStatus(r);
+    return curFilter==='all'||s===curFilter;
+  }).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+  if(!rs.length){
+    el.innerHTML=`<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg><h3>No Rentals Found</h3><p>Tap <strong>New</strong> to create your first rental.</p></div>`;
+    return;
+  }
+  el.innerHTML=rs.map(r=>{
+    const s=rentalStatus(r);
+    return`<div class="rc ${s}" onclick="showDetail('${r.id}')">
+      <div class="rc-top"><div><div class="rc-name">${esc(r.customer.name)}</div><div class="rc-addr">${esc(r.service.address)}</div></div>${badge(s)}</div>
+      <div class="rc-meta">
+        <span>${BIN}</span>
+        <span>Drop-off: <strong>${fmtDS(r.service.dropoffDate)}</strong></span>
+        <span>Pick-up: <strong>${fmtDS(r.service.pickupDate)}</strong></span>
+        <span>$${r.service.price}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─────────────────────────────────────────────
+// DETAIL MODAL
+// ─────────────────────────────────────────────
+function showDetail(id){
+  const r=Store.rentals().find(r=>r.id===id);if(!r) return;
+  const s=rentalStatus(r);
+  const csz=[r.customer.renterCity,r.customer.renterState,r.customer.renterZip].filter(Boolean).join(', ');
+  document.getElementById('detail-modal').innerHTML=`
+    <div class="modal-hdr">
+      <div class="modal-title">${esc(r.customer.name)}</div>
+      <button class="mclose" onclick="closeDetail()">✕</button>
+    </div>
+    ${badge(s)}
+    <div class="d-section" style="margin-top:14px">
+      <h4>Renter</h4>
+      <div class="d-row"><span class="d-key">Name</span><span class="d-val">${esc(r.customer.name)}</span></div>
+      <div class="d-row"><span class="d-key">Address</span><span class="d-val">${esc(r.customer.renterAddress||'')}${csz?', '+esc(csz):''}</span></div>
+      <div class="d-row"><span class="d-key">Phone</span><span class="d-val">${esc(r.customer.phone)}</span></div>
+      <div class="d-row"><span class="d-key">Email</span><span class="d-val">${esc(r.customer.email)}</span></div>
+    </div>
+    <div class="d-section">
+      <h4>Service</h4>
+      <div class="d-row"><span class="d-key">Drop-off Location</span><span class="d-val">${esc(r.service.address)}</span></div>
+      <div class="d-row"><span class="d-key">Container</span><span class="d-val">${BIN}</span></div>
+      <div class="d-row"><span class="d-key">Drop-off</span><span class="d-val">${fmtD(r.service.dropoffDate)}</span></div>
+      <div class="d-row"><span class="d-key">Pick-up</span><span class="d-val">${fmtD(r.service.pickupDate)}</span></div>
+      <div class="d-row"><span class="d-key">Rental Period</span><span class="d-val">${r.service.rentalDays} days</span></div>
+      <div class="d-row"><span class="d-key">Rental Fee</span><span class="d-val">$${r.service.price}</span></div>
+    </div>
+    <div class="d-section">
+      <h4>Signed Agreement</h4>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:8px">Signed: ${fmtD(r.agreement.signedAt)}</div>
+      <img class="sig-img" src="${r.agreement.sigDataUrl}" alt="Renter Signature">
+    </div>
+    <div class="d-section">
+      <h4>Calendar</h4>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn btn-dark btn-sm" onclick="reDownload('${id}')">Download .ics File (Both Events)</button>
+        <button class="btn btn-outline btn-sm" onclick="reGCal('${id}','dropoff')">Add Drop-off to Google Calendar</button>
+        <button class="btn btn-outline btn-sm" onclick="reGCal('${id}','pickup')">Add Pick-up to Google Calendar</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+      ${s!=='completed'
+        ?`<button class="btn btn-primary" style="flex:1" onclick="markDone('${id}')">Mark Completed</button>
+           <button class="btn btn-ghost btn-sm" onclick="extendRental('${id}')">Extend</button>`
+        :`<button class="btn btn-danger btn-sm" onclick="delRental('${id}')">Delete Record</button>`}
+    </div>`;
+  document.getElementById('detail-backdrop').classList.add('open');
+}
+
+function closeDetail(){document.getElementById('detail-backdrop').classList.remove('open')}
+document.getElementById('detail-backdrop').addEventListener('click',function(e){if(e.target===this) closeDetail()});
+
+function markDone(id){
+  const rs=Store.rentals();const r=rs.find(r=>r.id===id);
+  if(r){r.status='completed';Store.saveRentals(rs)}
+  closeDetail();renderList();refreshMap();toast('Marked as completed','ok');
+}
+
+function extendRental(id){
+  const d=prompt('Extend by how many additional days?');
+  if(!d||isNaN(d)) return;
+  const rs=Store.rentals();const r=rs.find(r=>r.id===id);
+  if(r){const pu=new Date(r.service.pickupDate);pu.setDate(pu.getDate()+parseInt(d));r.service.pickupDate=pu.toISOString();Store.saveRentals(rs)}
+  closeDetail();renderList();toast(`Extended by ${d} day${d==='1'?'':'s'}`, 'ok');
+}
+
+function delRental(id){
+  if(!confirm('Permanently delete this rental record?')) return;
+  Store.saveRentals(Store.rentals().filter(r=>r.id!==id));
+  closeDetail();renderList();refreshMap();toast('Record deleted');
+}
+
+function reDownload(id){
+  const r=Store.rentals().find(r=>r.id===id);if(!r) return;
+  draft={id:r.id,name:r.customer.name,phone:r.customer.phone,
+    address:r.service.address,dropoffDate:r.service.dropoffDate,pickupDate:r.service.pickupDate};
+  dlCal();
+}
+
+function reGCal(id,type){
+  const r=Store.rentals().find(r=>r.id===id);if(!r) return;
+  draft={id:r.id,name:r.customer.name,phone:r.customer.phone,
+    address:r.service.address,dropoffDate:r.service.dropoffDate,pickupDate:r.service.pickupDate};
+  gCal(type);
+}
+
+// ─────────────────────────────────────────────
+// SETTINGS
+// ─────────────────────────────────────────────
+function loadSettingsUI(){
+  const c=Store.settings();
+  document.getElementById('s-pk').value=c.pk||'';
+  document.getElementById('s-sid').value=c.sid||'';
+  document.getElementById('s-tid').value=c.tid||'';
+  document.getElementById('s-oe').value=c.ownerEmail||'eric@moshauling.co';
+  document.getElementById('s-bp').value=c.phone||'';
+  document.getElementById('s-rep').value=c.rep||'Eric Dale';
+}
+
+function saveSetting(){
+  Store.saveSettings({
+    pk:document.getElementById('s-pk').value,
+    sid:document.getElementById('s-sid').value,
+    tid:document.getElementById('s-tid').value,
+    ownerEmail:document.getElementById('s-oe').value||'eric@moshauling.co',
+    phone:document.getElementById('s-bp').value,
+    rep:document.getElementById('s-rep').value||'Eric Dale',
+  });
+}
+
+function clearAll(){
+  if(!confirm('Delete ALL rental records? This cannot be undone.')) return;
+  localStorage.removeItem('mh_r');renderList();refreshMap();toast('All records cleared');
+}
+
+// ─────────────────────────────────────────────
+// UTILS
+// ─────────────────────────────────────────────
+function v(id){return(document.getElementById(id)||{}).value?.trim()||''}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function fmtD(iso){if(!iso) return '';return new Date(iso).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true})}
+function fmtDS(iso){if(!iso) return '';return new Date(iso).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',hour12:true})}
+
+function toast(msg,type=''){
+  const c=document.getElementById('toaster');
+  const t=document.createElement('div');
+  t.className='toast '+(type==='ok'?'ok':type==='err'?'err':'');
+  t.textContent=msg;c.appendChild(t);
+  requestAnimationFrame(()=>t.classList.add('show'));
+  setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),220)},3200);
+}
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+refreshMap();
+</script>
+</body>
+</html>
