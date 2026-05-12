@@ -350,14 +350,16 @@ code{background:#e5e7eb;padding:1px 5px;border-radius:3px;font-size:11.5px;font-
       </div>
       <div class="fg"><label>Public Key</label><input type="text" id="s-pk" placeholder="your_public_key" oninput="saveSetting()"></div>
       <div class="fg"><label>Service ID</label><input type="text" id="s-sid" placeholder="service_xxxxxxx" oninput="saveSetting()"></div>
-      <div class="fg"><label>Template ID</label><input type="text" id="s-tid" placeholder="template_xxxxxxx" oninput="saveSetting()"></div>
+      <div class="fg"><label>Rental Agreement Template ID <span style="font-size:11px;color:var(--muted);font-weight:400">(sent after signing)</span></label><input type="text" id="s-tid" placeholder="template_xxxxxxx" oninput="saveSetting()"></div>
+      <div class="fg"><label>Appointment Confirmation Template ID <span style="font-size:11px;color:var(--muted);font-weight:400">(sent when appointment is booked)</span></label><input type="text" id="s-atid" placeholder="template_xxxxxxx" oninput="saveSetting()"></div>
       <button class="btn btn-outline btn-sm" onclick="testEmail()">Send Test Email to Owner</button>
     </div>
 
     <div class="s-section">
       <h3>Template Variables</h3>
-      <div class="info-box info-grey">
-        Set the <strong>To</strong> field in your template to <code>{{to_email}}</code>.<br><br>
+      <div class="info-box info-grey" style="margin-bottom:10px">
+        <strong>Rental Agreement Template</strong> (sent after signing)<br>
+        Set the <strong>To</strong> field to <code>{{to_email}}</code>.<br><br>
         <code>{{to_email}}</code> &nbsp;·&nbsp; <code>{{reply_to}}</code><br>
         <code>{{customer_name}}</code> &nbsp;·&nbsp; <code>{{customer_phone}}</code><br>
         <code>{{renter_address}}</code> &nbsp;·&nbsp; <code>{{service_address}}</code><br>
@@ -365,6 +367,15 @@ code{background:#e5e7eb;padding:1px 5px;border-radius:3px;font-size:11.5px;font-
         <code>{{rental_days}}</code> &nbsp;·&nbsp; <code>{{price}}</code><br>
         <code>{{agreement_id}}</code> &nbsp;·&nbsp; <code>{{signed_at}}</code><br>
         <code>{{signature_img}}</code> — use as <code>&lt;img src="{{signature_img}}"&gt;</code>
+      </div>
+      <div class="info-box info-grey">
+        <strong>Appointment Confirmation Template</strong> (sent when appointment is booked)<br>
+        Set the <strong>To</strong> field to <code>{{to_email}}</code>.<br><br>
+        <code>{{to_email}}</code> &nbsp;·&nbsp; <code>{{reply_to}}</code><br>
+        <code>{{customer_name}}</code> &nbsp;·&nbsp; <code>{{customer_phone}}</code><br>
+        <code>{{service_address}}</code> &nbsp;·&nbsp; <code>{{appt_date}}</code><br>
+        <code>{{rental_days}}</code> &nbsp;·&nbsp; <code>{{price}}</code><br>
+        <code>{{cal_link}}</code> — Google Calendar invite URL (use as <code>&lt;a href="{{cal_link}}"&gt;Add to Calendar&lt;/a&gt;</code>)
       </div>
     </div>
 
@@ -400,6 +411,7 @@ const Store={
   settings(){
     return JSON.parse(localStorage.getItem('mh_s')||JSON.stringify({
       pk:'UArlcTXupXk48WJ10',sid:'service_nnqpehg',tid:'template_56np39x',
+      apptTid:'',
       ownerEmail:'eric@moshauling.co',
       phone:'(720) 341-8144',rep:'Eric Dale'
     }))
@@ -656,9 +668,13 @@ function renderStep(s){
       <div style="font-family:'Oswald',sans-serif;font-size:22px;font-weight:700;margin-bottom:6px;letter-spacing:.3px">Agreement Signed</div>
       <div style="color:var(--muted);font-size:13px;margin-bottom:24px">Agreement #<strong style="color:var(--dark)">${(draft.id||'').toUpperCase()}</strong></div>
       <ul class="action-list" style="text-align:left;margin-bottom:22px">
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="${Store.settings().apptTid?'#16a34a':'#9ca3af'}" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 2v4M16 2v4"/></svg>
+          <span>${Store.settings().apptTid?'✓ Appointment confirmation + calendar invite sent when appointment was booked':'<em style="color:var(--muted)">Appointment template not set up — add in Settings</em>'}</span>
+        </li>
         <li id="al-email">
           <svg viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,12 2,6"/></svg>
-          <span>Sending agreement to renter &amp; owner…</span>
+          <span>Sending signed agreement to renter &amp; owner…</span>
         </li>
         <li>
           <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -721,6 +737,7 @@ async function s2next(){
   const geo=await geocode(addr);
   if(geo){draft.lat=geo.lat;draft.lng=geo.lng}
   else toast('Address not found on map — you can still continue','err');
+  sendApptEmail(draft); // fire appointment confirmation + calendar invite (non-blocking)
   renderStep(3);
 }
 
@@ -837,14 +854,51 @@ function dlCal(){
   toast('Calendar file downloaded','ok');
 }
 
+function gCalUrl(address,name,phone,dateIso,type,rentalId){
+  const start=new Date(dateIso);
+  const end=new Date(start.getTime()+7200000);
+  const label=type==='pickup'?'Bin Pick-up':'Bin Drop-off';
+  const title=label+' – '+address.split(',')[0];
+  const details='Renter: '+name+'\nPhone: '+phone+'\nContainer: '+BIN+(rentalId?'\nAgreement #'+rentalId.toUpperCase():'');
+  const fmt=d=>d.toISOString().replace(/[-:.]/g,'').slice(0,15)+'Z';
+  return'https://calendar.google.com/calendar/render?action=TEMPLATE'
+    +'&text='+encodeURIComponent(title)
+    +'&dates='+fmt(start)+'/'+fmt(end)
+    +'&details='+encodeURIComponent(details)
+    +'&location='+encodeURIComponent(address);
+}
+
 function gCal(type){
   const isD=type==='dropoff';
-  const start=new Date(isD?draft.dropoffDate:draft.pickupDate);
-  const end=new Date(start.getTime()+7200000);
-  const title=(isD?'Bin Drop-off':'Bin Pick-up')+' – '+draft.address.split(',')[0];
-  const details=`Renter: ${draft.name}\nPhone: ${draft.phone}\nContainer: ${BIN}\nAgreement #${(draft.id||'').toUpperCase()}`;
-  const fmt=d=>d.toISOString().replace(/[-:.]/g,'').slice(0,15)+'Z';
-  window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${fmt(start)}/${fmt(end)}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(draft.address)}`,'_blank');
+  window.open(gCalUrl(draft.address,draft.name,draft.phone,isD?draft.dropoffDate:draft.pickupDate,type,draft.id),'_blank');
+}
+
+async function sendApptEmail(d){
+  const cfg=Store.settings();
+  if(!cfg.pk||!cfg.sid||!cfg.apptTid){return;} // appointment template not configured — skip
+  try{
+    await loadEJS();
+    emailjs.init(cfg.pk);
+    const calLink=gCalUrl(d.address,d.name,d.phone,d.dropoffDate,'dropoff',d.id||'');
+    const params={
+      customer_name:d.name,
+      customer_phone:d.phone,
+      service_address:d.address,
+      appt_date:fmtD(d.dropoffDate),
+      rental_days:d.rentalDays||'—',
+      price:'$'+(d.price||'—'),
+      cal_link:calLink,
+    };
+    try{
+      await emailjs.send(cfg.sid,cfg.apptTid,{...params,to_email:d.email,reply_to:cfg.ownerEmail});
+      toast('Appointment confirmation sent to '+d.email,'ok');
+    }catch(e1){
+      console.error('[MH] Appt email FAILED:',e1);
+      toast('Appointment email failed','err');
+    }
+  }catch(e){
+    console.error('[MH] Appt email setup error:',e);
+  }
 }
 
 async function loadEJS(){
@@ -1051,6 +1105,7 @@ function loadSettingsUI(){
   document.getElementById('s-pk').value=c.pk||'';
   document.getElementById('s-sid').value=c.sid||'';
   document.getElementById('s-tid').value=c.tid||'';
+  document.getElementById('s-atid').value=c.apptTid||'';
   document.getElementById('s-oe').value=c.ownerEmail||'eric@moshauling.co';
   document.getElementById('s-bp').value=c.phone||'';
   document.getElementById('s-rep').value=c.rep||'Eric Dale';
@@ -1061,6 +1116,7 @@ function saveSetting(){
     pk:document.getElementById('s-pk').value,
     sid:document.getElementById('s-sid').value,
     tid:document.getElementById('s-tid').value,
+    apptTid:document.getElementById('s-atid').value,
     ownerEmail:document.getElementById('s-oe').value||'eric@moshauling.co',
     phone:document.getElementById('s-bp').value,
     rep:document.getElementById('s-rep').value||'Eric Dale',
