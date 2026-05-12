@@ -387,6 +387,23 @@ code{background:#e5e7eb;padding:1px 5px;border-radius:3px;font-size:11.5px;font-
     </div>
 
     <div class="s-section">
+      <h3>☁️ Cloud Sync (Cross-Device)</h3>
+      <div class="info-box info-blue" style="margin-bottom:12px">
+        <strong>One-time Firebase setup (~5 min, free):</strong><br>
+        1. Go to <strong>console.firebase.google.com</strong> → Add project<br>
+        2. Build → Firestore Database → Create (start in <strong>test mode</strong>)<br>
+        3. Project Settings (gear icon) → Your apps → Add Web app → copy <strong>apiKey</strong> and <strong>projectId</strong><br>
+        4. Paste both below and tap <strong>Connect &amp; Sync</strong>
+      </div>
+      <div class="fg"><label>Firebase API Key</label><input type="text" id="s-fbkey" placeholder="AIzaSy..." oninput="saveSetting()"></div>
+      <div class="fg"><label>Firebase Project ID</label><input type="text" id="s-fbproject" placeholder="your-project-id" oninput="saveSetting()"></div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
+        <button class="btn btn-primary btn-sm" onclick="startCloudSync()">Connect &amp; Sync</button>
+        <span id="cloud-status" style="font-size:13px;color:var(--muted)">Not connected</span>
+      </div>
+    </div>
+
+    <div class="s-section">
       <h3>Data</h3>
       <button class="btn btn-danger btn-sm" onclick="clearAll()">Clear All Rental Records</button>
     </div>
@@ -413,7 +430,8 @@ const Store={
       pk:'UArlcTXupXk48WJ10',sid:'service_nnqpehg',tid:'template_56np39x',
       apptTid:'',
       ownerEmail:'eric@moshauling.co',
-      phone:'(720) 341-8144',rep:'Eric Dale'
+      phone:'(720) 341-8144',rep:'Eric Dale',
+      fbKey:'',fbProject:''
     }))
   },
   saveSettings(s){localStorage.setItem('mh_s',JSON.stringify(s))},
@@ -1109,6 +1127,9 @@ function loadSettingsUI(){
   document.getElementById('s-oe').value=c.ownerEmail||'eric@moshauling.co';
   document.getElementById('s-bp').value=c.phone||'';
   document.getElementById('s-rep').value=c.rep||'Eric Dale';
+  document.getElementById('s-fbkey').value=c.fbKey||'';
+  document.getElementById('s-fbproject').value=c.fbProject||'';
+  if(fbDb) updateCloudStatus(true);
 }
 
 function saveSetting(){
@@ -1120,6 +1141,8 @@ function saveSetting(){
     ownerEmail:document.getElementById('s-oe').value||'eric@moshauling.co',
     phone:document.getElementById('s-bp').value,
     rep:document.getElementById('s-rep').value||'Eric Dale',
+    fbKey:document.getElementById('s-fbkey').value,
+    fbProject:document.getElementById('s-fbproject').value,
   });
 }
 
@@ -1142,7 +1165,92 @@ function toast(msg,type=''){
   setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),220)},3200);
 }
 
+// ── FIREBASE CLOUD SYNC ──────────────────────────────────────────
+let fbDb=null,fbUnsubscribe=null;
+
+function loadScript(src){
+  return new Promise((res,rej)=>{
+    if(document.querySelector('script[src="'+src+'"]')){res();return;}
+    const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;
+    document.head.appendChild(s);
+  });
+}
+
+async function initFirebase(){
+  const cfg=Store.settings();
+  if(!cfg.fbKey||!cfg.fbProject) return false;
+  if(fbDb) return true;
+  try{
+    await loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
+    await loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js');
+    if(!firebase.apps.length){
+      firebase.initializeApp({apiKey:cfg.fbKey,authDomain:cfg.fbProject+'.firebaseapp.com',projectId:cfg.fbProject});
+    }
+    fbDb=firebase.firestore();
+    return true;
+  }catch(e){
+    console.error('[MH] Firebase init failed:',e);
+    return false;
+  }
+}
+
+async function pushToCloud(rentals){
+  if(!fbDb) return;
+  try{
+    const col=fbDb.collection('rentals');
+    const snap=await col.get();
+    const batch=fbDb.batch();
+    const ids=new Set(rentals.map(r=>r.id));
+    // delete removed
+    snap.docs.forEach(d=>{if(!ids.has(d.id)) batch.delete(d.ref);});
+    // upsert all
+    rentals.forEach(r=>batch.set(col.doc(r.id),r));
+    await batch.commit();
+  }catch(e){console.error('[MH] Cloud push failed:',e);}
+}
+
+function watchCloud(){
+  if(!fbDb) return;
+  if(fbUnsubscribe) fbUnsubscribe();
+  fbUnsubscribe=fbDb.collection('rentals').onSnapshot(snap=>{
+    const rentals=snap.docs.map(d=>d.data());
+    localStorage.setItem('mh_r',JSON.stringify(rentals));
+    refreshMap();
+    if(document.getElementById('view-rentals').classList.contains('active')) renderList();
+    updateCloudStatus(true);
+  },err=>{
+    console.error('[MH] Cloud watch error:',err);
+    updateCloudStatus(false);
+  });
+}
+
+function updateCloudStatus(ok){
+  const el=document.getElementById('cloud-status');
+  if(!el) return;
+  el.textContent=ok?'✓ Connected — syncing in real-time':'✗ Sync error — check console';
+  el.style.color=ok?'#16a34a':'#b91c1c';
+}
+
+async function startCloudSync(){
+  const ok=await initFirebase();
+  if(ok){
+    watchCloud();
+    toast('Cloud sync enabled','ok');
+  } else {
+    toast('Enter Firebase API Key & Project ID first','err');
+  }
+}
+
+// Patch Store.saveRentals to also push to cloud
+const _baseSave=Store.saveRentals.bind(Store);
+Store.saveRentals=function(rs){
+  _baseSave(rs);
+  if(fbDb) pushToCloud(rs);
+};
+// ─────────────────────────────────────────────────────────────────
+
 refreshMap();
+initFirebase().then(ok=>{if(ok) watchCloud();});
 </script>
 </body>
 </html>
