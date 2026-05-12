@@ -59,6 +59,7 @@ nav{background:var(--dark);color:#fff;height:var(--nav);display:flex;align-items
 .rc.overdue{border-left-color:var(--red)}
 .rc.due-soon{border-left-color:var(--yellow)}
 .rc.completed{border-left-color:#9ca3af;opacity:.7}
+.rc.reserved{border-left-color:#2563eb}
 .rc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
 .rc-name{font-family:'Oswald',sans-serif;font-size:16px;font-weight:600;letter-spacing:.2px}
 .rc-addr{font-size:13px;color:var(--muted);margin-top:2px}
@@ -71,6 +72,7 @@ nav{background:var(--dark);color:#fff;height:var(--nav);display:flex;align-items
 .b-overdue{background:var(--red-pale);color:var(--red)}
 .b-due-soon{background:var(--yellow-pale);color:var(--yellow)}
 .b-completed{background:#f3f4f6;color:#9ca3af}
+.b-reserved{background:#dbeafe;color:#1d4ed8}
 
 /* BUTTONS */
 .btn{padding:11px 18px;border-radius:4px;border:none;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .15s,background .15s;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-family:'Inter',sans-serif;letter-spacing:.2px}
@@ -328,6 +330,7 @@ code{background:#e5e7eb;padding:1px 5px;border-radius:3px;font-size:11.5px;font-
 <div class="view" id="view-rentals">
   <div class="filter-bar">
     <button class="fc active" onclick="setFilter('all')">All</button>
+    <button class="fc" onclick="setFilter('reserved')">Reserved</button>
     <button class="fc" onclick="setFilter('active')">Active</button>
     <button class="fc" onclick="setFilter('due-soon')">Due Today</button>
     <button class="fc" onclick="setFilter('overdue')">Overdue</button>
@@ -446,13 +449,14 @@ function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2
 
 function rentalStatus(r){
   if(r.status==='completed') return 'completed';
+  if(r.status==='reserved') return 'reserved';
   const h=(new Date(r.service.pickupDate)-Date.now())/3600000;
   if(h<0) return 'overdue';
   if(h<24) return 'due-soon';
   return 'active';
 }
 function badge(s){
-  const m={active:['b-active','Active'],overdue:['b-overdue','Overdue'],'due-soon':['b-due-soon','Due Today'],completed:['b-completed','Done']};
+  const m={active:['b-active','Active'],overdue:['b-overdue','Overdue'],'due-soon':['b-due-soon','Due Today'],completed:['b-completed','Done'],reserved:['b-reserved','Reserved — Pending Signature']};
   const[c,l]=m[s]||m.active;
   return`<span class="badge ${c}">${l}</span>`;
 }
@@ -484,20 +488,22 @@ const ICONS={
   active:mkIcon('#16a34a'),
   'due-soon':mkIcon('#d97706'),
   overdue:mkIcon('#dc2626'),
-  completed:mkIcon('#9ca3af',14)
+  completed:mkIcon('#9ca3af',14),
+  reserved:mkIcon('#2563eb')
 };
 
 let markers=[];
 function refreshMap(){
   markers.forEach(m=>MAP.removeLayer(m));markers=[];
   const rs=Store.rentals();
-  let act=0,od=0,ds=0;
+  let act=0,od=0,ds=0,res=0;
   rs.forEach(r=>{
     if(!r.service.lat||!r.service.lng) return;
     const s=rentalStatus(r);
     if(s==='active') act++;
     if(s==='overdue') od++;
     if(s==='due-soon') ds++;
+    if(s==='reserved') res++;
     const m=L.marker([r.service.lat,r.service.lng],{icon:ICONS[s]||ICONS.active})
       .addTo(MAP)
       .bindPopup(`
@@ -512,6 +518,7 @@ function refreshMap(){
   });
   const el=document.getElementById('map-stats');
   el.innerHTML=`<div class="stat-chip"><div class="dot dg"></div>${act} Active</div>`
+    +(res?`<div class="stat-chip"><div class="dot" style="background:#2563eb"></div>${res} Reserved</div>`:'')
     +(ds?`<div class="stat-chip"><div class="dot dy"></div>${ds} Due Today</div>`:'')
     +(od?`<div class="stat-chip"><div class="dot dr"></div>${od} Overdue</div>`:'');
 }
@@ -755,6 +762,24 @@ async function s2next(){
   const geo=await geocode(addr);
   if(geo){draft.lat=geo.lat;draft.lng=geo.lng}
   else toast('Address not found on map — you can still continue','err');
+  // Assign ID and save as reserved so it appears on map + rentals immediately
+  if(!draft.id) draft.id=uid();
+  const pu=new Date(draft.dropoffDate);
+  pu.setDate(pu.getDate()+draft.rentalDays);
+  const reservation={
+    id:draft.id,
+    customer:{name:draft.name,email:draft.email,phone:draft.phone,
+      renterAddress:draft.renterAddress||'',renterCity:draft.renterCity||'',
+      renterState:draft.renterState||'CO',renterZip:draft.renterZip||''},
+    service:{address:draft.address,lat:draft.lat,lng:draft.lng,
+      dropoffDate:draft.dropoffDate,rentalDays:draft.rentalDays,
+      pickupDate:pu.toISOString(),price:draft.price||0},
+    agreement:null,status:'reserved',createdAt:new Date().toISOString()
+  };
+  const rs=Store.rentals();
+  const idx=rs.findIndex(r=>r.id===draft.id);
+  if(idx>=0) rs[idx]=reservation; else rs.push(reservation);
+  Store.saveRentals(rs);
   sendApptEmail(draft); // fire appointment confirmation + calendar invite (non-blocking)
   renderStep(3);
 }
@@ -791,7 +816,10 @@ async function finishRental(){
     agreement:{sigDataUrl:draft.sigDataUrl,signedAt:draft.signedAt},
     status:'active',createdAt:new Date().toISOString(),
   };
-  const rs=Store.rentals();rs.push(rental);Store.saveRentals(rs);
+  const rs=Store.rentals();
+  const ei=rs.findIndex(r=>r.id===rental.id);
+  if(ei>=0) rs[ei]=rental; else rs.push(rental); // update reserved → active, or create new
+  Store.saveRentals(rs);
   await sendEmails(rental);
   const el=document.getElementById('al-email');
   if(el) el.querySelector('svg').setAttribute('stroke','#16a34a');
@@ -911,8 +939,14 @@ async function sendApptEmail(d){
       await emailjs.send(cfg.sid,cfg.apptTid,{...params,to_email:d.email,reply_to:cfg.ownerEmail});
       toast('Appointment confirmation sent to '+d.email,'ok');
     }catch(e1){
-      console.error('[MH] Appt email FAILED:',e1);
+      console.error('[MH] Appt renter email FAILED:',e1);
       toast('Appointment email failed','err');
+    }
+    // Also send calendar invite to owner
+    try{
+      await emailjs.send(cfg.sid,cfg.apptTid,{...params,to_email:cfg.ownerEmail,reply_to:d.email});
+    }catch(e2){
+      console.error('[MH] Appt owner email FAILED:',e2);
     }
   }catch(e){
     console.error('[MH] Appt email setup error:',e);
@@ -1009,7 +1043,7 @@ let curFilter='all';
 function setFilter(f){
   curFilter=f;
   document.querySelectorAll('.fc').forEach((el,i)=>
-    el.classList.toggle('active',['all','active','due-soon','overdue','completed'][i]===f)
+    el.classList.toggle('active',['all','reserved','active','due-soon','overdue','completed'][i]===f)
   );
   renderList();
 }
@@ -1073,10 +1107,13 @@ function showDetail(id){
       </div>
     </div>
     <div style="display:flex;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
-      ${s!=='completed'
-        ?`<button class="btn btn-primary" style="flex:1" onclick="markDone('${id}')">Mark Completed</button>
-           <button class="btn btn-ghost btn-sm" onclick="extendRental('${id}')">Extend</button>`
-        :`<button class="btn btn-danger btn-sm" onclick="delRental('${id}')">Delete Record</button>`}
+      ${s==='reserved'
+        ?`<button class="btn btn-primary" style="flex:1" onclick="completeAgreement('${id}')">Complete Agreement →</button>
+           <button class="btn btn-danger btn-sm" onclick="delRental('${id}')">Cancel</button>`
+        :s!=='completed'
+          ?`<button class="btn btn-primary" style="flex:1" onclick="markDone('${id}')">Mark Completed</button>
+             <button class="btn btn-ghost btn-sm" onclick="extendRental('${id}')">Extend</button>`
+          :`<button class="btn btn-danger btn-sm" onclick="delRental('${id}')">Delete Record</button>`}
     </div>`;
   document.getElementById('detail-backdrop').classList.add('open');
 }
@@ -1102,6 +1139,27 @@ function delRental(id){
   if(!confirm('Permanently delete this rental record?')) return;
   Store.saveRentals(Store.rentals().filter(r=>r.id!==id));
   closeDetail();renderList();refreshMap();toast('Record deleted');
+}
+
+function completeAgreement(id){
+  const r=Store.rentals().find(r=>r.id===id);if(!r) return;
+  // Re-populate draft from saved reservation so agreement can be completed
+  draft={
+    id:r.id,
+    name:r.customer.name,email:r.customer.email,phone:r.customer.phone,
+    renterAddress:r.customer.renterAddress,renterCity:r.customer.renterCity,
+    renterState:r.customer.renterState,renterZip:r.customer.renterZip,
+    address:r.service.address,lat:r.service.lat,lng:r.service.lng,
+    dropoffDate:r.service.dropoffDate,rentalDays:r.service.rentalDays,
+    pickupDate:r.service.pickupDate,price:r.service.price,discount:0
+  };
+  closeDetail();
+  // Navigate to new-rental without calling initForm (which would wipe draft)
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-new-rental').classList.add('active');
+  document.getElementById('nb-new-rental').classList.add('active');
+  renderStep(3); // jump straight to agreement — renter info + service details already saved
 }
 
 function reDownload(id){
