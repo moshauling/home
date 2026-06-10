@@ -601,12 +601,24 @@ function renderStep(s){
         <div style="font-size:12px;color:var(--muted);margin-top:2px">Includes delivery, pickup &amp; disposal of up to 2 tons (4,000 lbs)</div>
       </div>
       <div class="fg">
+        <label>Travel Fee — optional</label>
+        <div style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:#f9fafb;border:1.5px solid var(--border);border-radius:4px;cursor:pointer" onclick="toggleTravel()">
+          <div id="travel-check" style="width:20px;height:20px;border-radius:4px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.15s;background:${draft.travelFee?'var(--orange)':'#fff'};border-color:${draft.travelFee?'var(--orange)':'var(--border)'}">
+            ${draft.travelFee?'<svg viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="2,6 5,9 10,3"/></svg>':''}
+          </div>
+          <span style="font-size:14px;font-weight:600;color:var(--dark)">Add $25 Travel Fee</span>
+        </div>
+      </div>
+      <div class="fg">
         <label>Discount ($) — optional</label>
         <input id="f-disc" type="number" min="0" value="${draft.discount||''}" placeholder="0" oninput="updatePriceSummary()">
       </div>
       <div id="price-summary" style="background:var(--dark);color:#fff;border-radius:4px;padding:12px 14px;margin-bottom:16px;display:none">
         <div style="display:flex;justify-content:space-between;font-size:13px;opacity:.75;margin-bottom:4px">
           <span>Base price</span><span id="ps-base"></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:#D4900A;margin-bottom:4px" id="ps-travel-row">
+          <span>Travel Fee</span><span id="ps-travel"></span>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:13px;color:#f9a825;margin-bottom:8px" id="ps-disc-row">
           <span>Discount</span><span id="ps-disc"></span>
@@ -728,18 +740,32 @@ function selPeriod(d){
   updatePriceSummary();
 }
 
+function toggleTravel(){
+  draft.travelFee=!draft.travelFee;
+  const box=document.getElementById('travel-check');
+  if(box){
+    box.style.background=draft.travelFee?'var(--orange)':'#fff';
+    box.style.borderColor=draft.travelFee?'var(--orange)':'var(--border)';
+    box.innerHTML=draft.travelFee?'<svg viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="2,6 5,9 10,3"/></svg>':'';
+  }
+  updatePriceSummary();
+}
+
 function updatePriceSummary(){
   if(!draft.rentalDays) return;
   const base=PRICE[draft.rentalDays];
   const discInput=document.getElementById('f-disc');
   const disc=discInput?Math.max(0,parseFloat(discInput.value)||0):draft.discount||0;
   draft.discount=disc;
-  const total=Math.max(0,base-disc);
+  const travel=draft.travelFee?25:0;
+  const total=Math.max(0,base+travel-disc);
   draft.price=total;
   const summary=document.getElementById('price-summary');
   if(!summary) return;
   summary.style.display='block';
   document.getElementById('ps-base').textContent='$'+base;
+  document.getElementById('ps-travel').textContent=travel>0?'+$'+travel:'—';
+  document.getElementById('ps-travel-row').style.opacity=travel>0?'1':'0.4';
   document.getElementById('ps-disc').textContent=disc>0?'-$'+disc:'—';
   document.getElementById('ps-disc-row').style.opacity=disc>0?'1':'0.4';
   document.getElementById('ps-total').textContent='$'+total;
@@ -794,7 +820,7 @@ function s4next(){
   if(!sigPad||sigPad.isEmpty()){toast('Renter signature is required','err');return}
   draft.sigDataUrl=sigPad.toDataURL('image/jpeg',0.5);
   draft.signedAt=new Date().toISOString();
-  draft.id=uid();
+  if(!draft.id) draft.id=uid(); // preserve reservation ID if already set
   renderStep(5);
 }
 
