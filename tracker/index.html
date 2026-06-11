@@ -1261,14 +1261,14 @@ function loadScript(src){
 }
 
 async function initFirebase(){
-  const cfg=Store.settings();
-  if(!cfg.fbKey||!cfg.fbProject) return false;
+  const FB_KEY='AIzaSyDSWDpb8IEO8WvHeYJ7kvxcReq8Pe2En2A';
+  const FB_PROJECT='mos-hauling';
   if(fbDb) return true;
   try{
     await loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
     await loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js');
     if(!firebase.apps.length){
-      firebase.initializeApp({apiKey:cfg.fbKey,authDomain:cfg.fbProject+'.firebaseapp.com',projectId:cfg.fbProject});
+      firebase.initializeApp({apiKey:FB_KEY,authDomain:FB_PROJECT+'.firebaseapp.com',projectId:FB_PROJECT});
     }
     fbDb=firebase.firestore();
     return true;
