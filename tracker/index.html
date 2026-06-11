@@ -1296,7 +1296,14 @@ async function pushToCloud(rentals){
 function watchCloud(){
   if(!fbDb) return;
   if(fbUnsubscribe) fbUnsubscribe();
+  let isFirst=true;
   fbUnsubscribe=fbDb.collection('rentals').onSnapshot(snap=>{
+    if(isFirst && snap.empty){
+      isFirst=false;
+      const local=Store.rentals();
+      if(local.length>0){pushToCloud(local);return;}
+    }
+    isFirst=false;
     const rentals=snap.docs.map(d=>d.data());
     localStorage.setItem('mh_r',JSON.stringify(rentals));
     refreshMap();
