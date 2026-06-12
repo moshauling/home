@@ -310,6 +310,7 @@ code{background:#e5e7eb;padding:1px 5px;border-radius:3px;font-size:11.5px;font-
 <div class="view active" id="view-dashboard">
   <div id="map"></div>
   <div class="map-overlay" id="map-stats"></div>
+  <div id="today-banner" style="display:none;position:absolute;bottom:0;left:0;right:0;z-index:500;background:#15803d;color:#fff;padding:10px 14px;max-height:40vh;overflow-y:auto"></div>
 </div>
 
 <!-- NEW RENTAL -->
@@ -489,10 +490,35 @@ function nav(v){
   document.querySelectorAll('.nb').forEach(el=>el.classList.remove('active'));
   document.getElementById('view-'+v).classList.add('active');
   document.getElementById('nb-'+v).classList.add('active');
-  if(v==='dashboard'){setTimeout(()=>MAP.invalidateSize(),80);refreshMap()}
+  if(v==='dashboard'){setTimeout(()=>MAP.invalidateSize(),80);refreshMap();checkTodayDropoffs();}
   if(v==='rentals') renderList();
   if(v==='new-rental') initForm();
   if(v==='settings') loadSettingsUI();
+}
+
+function checkTodayDropoffs(){
+  const banner=document.getElementById('today-banner');
+  if(!banner) return;
+  const todayStr=new Date().toISOString().slice(0,10);
+  const due=Store.rentals().filter(r=>{
+    if(r.status!=='scheduled') return false;
+    return (r.service.dropoffDate||'').slice(0,10)===todayStr;
+  });
+  if(!due.length){banner.style.display='none';return;}
+  banner.style.display='block';
+  banner.innerHTML=`
+    <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;opacity:.75;margin-bottom:6px">Drop-off${due.length>1?'s':''} scheduled today</div>
+    ${due.map(r=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px solid rgba(255,255,255,.2)">
+        <div>
+          <div style="font-size:14px;font-weight:600">${esc(r.customer.name)}</div>
+          <div style="font-size:12px;opacity:.8">${esc(r.service.address)}</div>
+        </div>
+        <button onclick="convertScheduled('${r.id}')"
+          style="flex-shrink:0;background:#fff;color:#15803d;border:none;padding:7px 14px;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">
+          Start Check-in →
+        </button>
+      </div>`).join('')}`;
 }
 
 const MAP=L.map('map',{zoomControl:true}).setView([39.7392,-104.9903],11);
@@ -1452,6 +1478,7 @@ Store.saveRentals=function(rs){
 // ─────────────────────────────────────────────────────────────────
 
 refreshMap();
+checkTodayDropoffs();
 initFirebase().then(ok=>{if(ok) watchCloud();});
 </script>
 </body>
