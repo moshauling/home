@@ -1445,9 +1445,12 @@ async function syncCalendly(){
       const invResp=await fetch(`https://api.calendly.com/scheduled_events/${uuid}/invitees`,{headers}).then(r=>r.json());
       const inv=invResp.collection?.[0];
       if(!inv) continue;
+      // Try event location first (Ask invitee), then fall back to custom question
+      const evDetail=await fetch(`https://api.calendly.com/scheduled_events/${uuid}`,{headers}).then(r=>r.json());
+      const locFromEvent=(evDetail.resource?.location?.location)||'';
       const qa=inv.questions_and_answers||[];
       const addrQ=qa.find(q=>{const ql=(q.question||'').toLowerCase();return ql.includes('address')||ql.includes('location')||ql.includes('drop');});
-      const address=addrQ?.answer||'';
+      const address=locFromEvent||(addrQ?.answer||'');
       let lat=null,lng=null;
       if(address){const geo=await geocode(address);if(geo){lat=geo.lat;lng=geo.lng;}}
       rs.push({
