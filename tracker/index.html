@@ -1420,9 +1420,13 @@ async function syncCalendly(){
   if(statusEl) statusEl.textContent='Syncing…';
   try{
     const headers={Authorization:`Bearer ${token}`};
-    const me=await fetch('https://api.calendly.com/users/me',{headers}).then(r=>r.json());
-    if(!me.resource?.uri){toast('Invalid Calendly token','err');if(statusEl)statusEl.textContent='Invalid token';return;}
-    const userUri=me.resource.uri;
+    // Decode user UUID directly from the JWT — no extra API call or scope needed
+    let userUri;
+    try{
+      const payload=JSON.parse(atob(token.split('.')[1]));
+      if(!payload.user_uuid) throw new Error('no user_uuid');
+      userUri=`https://api.calendly.com/users/${payload.user_uuid}`;
+    }catch(e){toast('Token appears malformed — try regenerating it','err');if(statusEl)statusEl.textContent='Bad token';return;}
     const now=new Date().toISOString();
     const evResp=await fetch(
       `https://api.calendly.com/scheduled_events?user=${encodeURIComponent(userUri)}&status=active&min_start_time=${encodeURIComponent(now)}&count=100`,
