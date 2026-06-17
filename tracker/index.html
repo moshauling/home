@@ -412,6 +412,18 @@ code{background:#e5e7eb;padding:1px 5px;border-radius:3px;font-size:11.5px;font-
     </div>
 
     <div class="s-section">
+      <h3>📅 Calendly Sync</h3>
+      <div class="info-box info-blue" style="margin-bottom:12px">
+        <strong>Setup:</strong> In your Calendly event type, add a custom question asking for the <strong>Drop-off address</strong>. Then paste your Personal Access Token below and tap Sync.
+      </div>
+      <div class="fg"><label>Personal Access Token</label><input type="password" id="s-cal-token" placeholder="eyJraWQi..." oninput="saveSetting()"></div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
+        <button class="btn btn-primary btn-sm" onclick="syncCalendly()">Sync Calendly Bookings</button>
+        <span id="cal-sync-status" style="font-size:13px;color:var(--muted)"></span>
+      </div>
+    </div>
+
+    <div class="s-section">
       <h3>Data</h3>
       <button class="btn btn-danger btn-sm" onclick="clearAll()">Clear All Rental Records</button>
     </div>
@@ -457,7 +469,7 @@ const Store={
       apptTid:'',
       ownerEmail:'eric@moshauling.co',
       phone:'(720) 340-8144',rep:'Eric Dale',
-      fbKey:'AIzaSyDSWDpb8IEO8WvHeYJ7kvxcReq8Pe2En2A',fbProject:'mos-hauling'
+      fbKey:'AIzaSyDSWDpb8IEO8WvHeYJ7kvxcReq8Pe2En2A',fbProject:'mos-hauling',calendlyToken:''
     }))
   },
   saveSettings(s){localStorage.setItem('mh_s',JSON.stringify(s))},
@@ -1350,6 +1362,7 @@ function loadSettingsUI(){
   document.getElementById('s-rep').value=c.rep||'Eric Dale';
   document.getElementById('s-fbkey').value=c.fbKey||'';
   document.getElementById('s-fbproject').value=c.fbProject||'';
+  document.getElementById('s-cal-token').value=c.calendlyToken||'';
   if(fbDb) updateCloudStatus(true);
 }
 
@@ -1364,6 +1377,7 @@ function saveSetting(){
     rep:document.getElementById('s-rep').value||'Eric Dale',
     fbKey:document.getElementById('s-fbkey').value,
     fbProject:document.getElementById('s-fbproject').value,
+    calendlyToken:document.getElementById('s-cal-token').value,
   });
 }
 
@@ -1385,6 +1399,68 @@ function toast(msg,type=''){
   requestAnimationFrame(()=>t.classList.add('show'));
   setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),220)},3200);
 }
+
+// ── CALENDLY SYNC ────────────────────────────────────────────────
+async function syncCalendly(){
+  const token=Store.settings().calendlyToken;
+  if(!token){toast('Paste your Calendly token in Settings first','err');return;}
+  const statusEl=document.getElementById('cal-sync-status');
+  if(statusEl) statusEl.textContent='Syncing…';
+  try{
+    const headers={Authorization:`Bearer ${token}`};
+    const me=await fetch('https://api.calendly.com/users/me',{headers}).then(r=>r.json());
+    if(!me.resource?.uri){toast('Invalid Calendly token','err');if(statusEl)statusEl.textContent='Invalid token';return;}
+    const userUri=me.resource.uri;
+    const now=new Date().toISOString();
+    const evResp=await fetch(
+      `https://api.calendly.com/scheduled_events?user=${encodeURIComponent(userUri)}&status=active&min_start_time=${encodeURIComponent(now)}&count=100`,
+      {headers}
+    ).then(r=>r.json());
+    const events=(evResp.collection||[]).filter(e=>{
+      const n=(e.name||'').toLowerCase();
+      return n.includes('dumpster')||n.includes('rental')||n.includes('hauling')||n.includes('bin');
+    });
+    if(!events.length){
+      toast('No dumpster rental bookings found on Calendly','ok');
+      if(statusEl) statusEl.textContent='No matching bookings found';
+      return;
+    }
+    const rs=Store.rentals();
+    let added=0;
+    for(const ev of events){
+      if(rs.find(r=>r.calendlyUri===ev.uri)) continue;
+      const uuid=ev.uri.split('/').pop();
+      const invResp=await fetch(`https://api.calendly.com/scheduled_events/${uuid}/invitees`,{headers}).then(r=>r.json());
+      const inv=invResp.collection?.[0];
+      if(!inv) continue;
+      const qa=inv.questions_and_answers||[];
+      const addrQ=qa.find(q=>{const ql=(q.question||'').toLowerCase();return ql.includes('address')||ql.includes('location')||ql.includes('drop');});
+      const address=addrQ?.answer||'';
+      let lat=null,lng=null;
+      if(address){const geo=await geocode(address);if(geo){lat=geo.lat;lng=geo.lng;}}
+      rs.push({
+        id:uid(),calendlyUri:ev.uri,
+        customer:{name:inv.name||'',email:inv.email||'',phone:inv.text_reminder_number||'',renterAddress:'',renterCity:'',renterState:'CO',renterZip:''},
+        service:{address,lat,lng,dropoffDate:ev.start_time,rentalDays:7,pickupDate:null,price:0},
+        agreement:null,status:'scheduled',createdAt:new Date().toISOString()
+      });
+      added++;
+    }
+    if(added>0){
+      Store.saveRentals(rs);refreshMap();checkTodayDropoffs();
+      toast(`${added} Calendly booking${added>1?'s':''} imported`,'ok');
+      if(statusEl) statusEl.textContent=`✓ ${added} imported`;
+    } else {
+      toast('All Calendly bookings already synced','ok');
+      if(statusEl) statusEl.textContent='✓ Already up to date';
+    }
+  }catch(e){
+    console.error('[MH] Calendly sync error:',e);
+    toast('Sync failed — check console','err');
+    if(statusEl) statusEl.textContent='Sync failed';
+  }
+}
+// ─────────────────────────────────────────────────────────────────
 
 // ── FIREBASE CLOUD SYNC ──────────────────────────────────────────
 let fbDb=null,fbUnsubscribe=null;
