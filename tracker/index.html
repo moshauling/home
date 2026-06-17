@@ -555,16 +555,27 @@ const ICONS={
 };
 
 let markers=[];
+let showCompletedOnMap=false;
+
+function toggleCompletedOnMap(){
+  showCompletedOnMap=!showCompletedOnMap;
+  refreshMap();
+}
+
 function refreshMap(){
   markers.forEach(m=>MAP.removeLayer(m));markers=[];
   const rs=Store.rentals();
-  let act=0,od=0,ds=0,res=0;
+  let act=0,od=0,ds=0,res=0,comp=0;
   rs.forEach(r=>{
     if(!r.service.lat||!r.service.lng) return;
     const s=rentalStatus(r);
+    if(s==='completed'){
+      comp++;
+      if(!showCompletedOnMap) return;
+    }
     if(s==='scheduled'){
       const msTil=new Date(r.service.dropoffDate).getTime()-Date.now();
-      if(msTil>48*3600000) return; // hide on map until day before
+      if(msTil>48*3600000) return;
     }
     if(s==='active') act++;
     if(s==='overdue') od++;
@@ -586,7 +597,8 @@ function refreshMap(){
   el.innerHTML=`<div class="stat-chip"><div class="dot dg"></div>${act} Active</div>`
     +(res?`<div class="stat-chip"><div class="dot" style="background:#2563eb"></div>${res} Reserved</div>`:'')
     +(ds?`<div class="stat-chip"><div class="dot dy"></div>${ds} Due Today</div>`:'')
-    +(od?`<div class="stat-chip"><div class="dot dr"></div>${od} Overdue</div>`:'');
+    +(od?`<div class="stat-chip"><div class="dot dr"></div>${od} Overdue</div>`:'')
+    +(comp?`<div class="stat-chip" onclick="toggleCompletedOnMap()" style="cursor:pointer;opacity:${showCompletedOnMap?'1':'.55'};border:1.5px solid ${showCompletedOnMap?'#9ca3af':'transparent'}"><div class="dot" style="background:#9ca3af"></div>${comp} Past ${showCompletedOnMap?'(on)':'(off)'}</div>`:'');
 }
 
 async function geocode(addr){
