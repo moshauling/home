@@ -633,12 +633,6 @@ function renderStep(s){
     <div class="card">
       <div class="section-hdr">Renter Information</div>
       <div class="fg"><label>Full Name *</label><input id="f-name" type="text" value="${esc(draft.name||'')}" placeholder="John Smith" autocomplete="name"></div>
-      <div class="fg"><label>Home / Billing Address *</label><input id="f-raddr" type="text" value="${esc(draft.renterAddress||'')}" placeholder="1234 Oak Street" autocomplete="address-line1"></div>
-      <div class="row2">
-        <div class="fg" style="flex:2"><label>City</label><input id="f-rcity" type="text" value="${esc(draft.renterCity||'')}" placeholder="Denver" autocomplete="address-level2"></div>
-        <div class="fg" style="flex:1"><label>State</label><input id="f-rst" type="text" value="${esc(draft.renterState||'CO')}" placeholder="CO" maxlength="2"></div>
-        <div class="fg" style="flex:1"><label>Zip</label><input id="f-rzip" type="text" value="${esc(draft.renterZip||'')}" placeholder="80202" autocomplete="postal-code" inputmode="numeric" maxlength="5"></div>
-      </div>
       <div class="fg"><label>Phone *</label><input id="f-phone" type="tel" value="${esc(draft.phone||'')}" placeholder="(720) 555-0100" autocomplete="tel"></div>
       <div class="fg"><label>Email Address *</label><input id="f-email" type="email" value="${esc(draft.email||'')}" placeholder="john@email.com" autocomplete="email"></div>
       <button class="btn btn-primary btn-full" onclick="s1next()">Continue →</button>
