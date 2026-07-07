@@ -864,7 +864,7 @@
           <div class="section-label">Where We Serve</div>
           <h2 class="section-title">Denver Metro &amp; Beyond</h2>
           <div class="divider"></div>
-          <p class="section-subtitle">Within 10 miles of downtown — no extra charge. 10–15 miles out adds a flat <strong>$25 travel fee</strong>. 15–20 miles out adds a flat <strong>$50 travel fee</strong>.</p>
+          <p class="section-subtitle">Within 15 miles of downtown — no extra charge. 15–20 miles out adds a flat <strong>$25 travel fee</strong>. 20–25 miles out adds a flat <strong>$50 travel fee</strong>.</p>
           <br />
           <a href="tel:7203408144" class="btn-primary">Check Your Area</a>
         </div>
@@ -898,15 +898,15 @@
         <div class="map-legend">
           <div class="map-legend-item">
             <div class="legend-swatch legend-free"></div>
-            Within 10 miles — No upcharge
+            Within 15 miles — No upcharge
           </div>
           <div class="map-legend-item">
             <div class="legend-swatch legend-upcharge25"></div>
-            10–15 miles — $25 travel fee
+            15–20 miles — $25 travel fee
           </div>
           <div class="map-legend-item">
             <div class="legend-swatch legend-upcharge50"></div>
-            15–20 miles — $50 travel fee
+            20–25 miles — $50 travel fee
           </div>
           <div style="margin-left:auto;font-size:.8rem;color:rgba(255,255,255,.35);">Centered on Downtown Denver</div>
         </div>
@@ -933,37 +933,37 @@
 
       // Draw largest to smallest so inner circles visually override outer fills
 
-      // 20-mile radius = 32,187 m — $50 travel fee zone
+      // 25-mile radius = 40,234 m — $50 travel fee zone
       L.circle(center, {
-        radius: 32187,
+        radius: 40234,
         color: '#c83c28',
         weight: 2,
         opacity: 0.85,
         dashArray: '6 5',
         fillColor: '#c83c28',
         fillOpacity: 0.12
-      }).addTo(map).bindTooltip('<strong>$50 Travel Fee</strong><br>15–20 miles from Downtown Denver', { sticky: true });
+      }).addTo(map).bindTooltip('<strong>$50 Travel Fee</strong><br>20–25 miles from Downtown Denver', { sticky: true });
 
-      // 15-mile radius = 24,140 m — $25 travel fee zone
+      // 20-mile radius = 32,187 m — $25 travel fee zone
       L.circle(center, {
-        radius: 24140,
+        radius: 32187,
         color: '#e07820',
         weight: 2,
         opacity: 0.9,
         dashArray: '8 6',
         fillColor: '#e07820',
         fillOpacity: 0.18
-      }).addTo(map).bindTooltip('<strong>$25 Travel Fee</strong><br>10–15 miles from Downtown Denver', { sticky: true });
+      }).addTo(map).bindTooltip('<strong>$25 Travel Fee</strong><br>15–20 miles from Downtown Denver', { sticky: true });
 
-      // 10-mile radius = 16,093 m — No upcharge zone
+      // 15-mile radius = 24,140 m — No upcharge zone
       L.circle(center, {
-        radius: 16093,
+        radius: 24140,
         color: '#D4900A',
         weight: 2,
         opacity: 1,
         fillColor: '#D4900A',
         fillOpacity: 0.22
-      }).addTo(map).bindTooltip('<strong>No Upcharge</strong><br>Within 10 miles — standard pricing', { sticky: true });
+      }).addTo(map).bindTooltip('<strong>No Upcharge</strong><br>Within 15 miles — standard pricing', { sticky: true });
 
       // Downtown Denver marker
       var icon = L.divIcon({
