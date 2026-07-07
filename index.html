@@ -298,8 +298,9 @@
     }
     .map-legend-item { display: flex; align-items: center; gap: 10px; font-size: .85rem; color: rgba(255,255,255,.8); font-weight: 500; }
     .legend-swatch { width: 28px; height: 14px; border-radius: 3px; flex-shrink: 0; }
-    .legend-free { background: rgba(212,144,10,.55); border: 2px solid #D4900A; }
-    .legend-upcharge { background: rgba(180,100,20,.3); border: 2px dashed #e07820; }
+    .legend-free { background: rgba(212,144,10,.45); border: 2px solid #D4900A; }
+    .legend-upcharge25 { background: rgba(224,120,32,.35); border: 2px dashed #e07820; }
+    .legend-upcharge50 { background: rgba(200,60,40,.25); border: 2px dashed #c83c28; }
     @media (max-width: 768px) { .areas-top { grid-template-columns: 1fr; } #service-map { height: 360px; } }
 
     /* ── REVIEWS ── */
@@ -863,7 +864,7 @@
           <div class="section-label">Where We Serve</div>
           <h2 class="section-title">Denver Metro &amp; Beyond</h2>
           <div class="divider"></div>
-          <p class="section-subtitle">We cover all of Denver metro within 15 miles of downtown with no extra charge. Between 15–25 miles out, a flat <strong>$25 trip upcharge</strong> applies.</p>
+          <p class="section-subtitle">Within 10 miles of downtown — no extra charge. 10–15 miles out adds a flat <strong>$25 travel fee</strong>. 15–20 miles out adds a flat <strong>$50 travel fee</strong>.</p>
           <br />
           <a href="tel:7203408144" class="btn-primary">Check Your Area</a>
         </div>
@@ -897,11 +898,15 @@
         <div class="map-legend">
           <div class="map-legend-item">
             <div class="legend-swatch legend-free"></div>
-            Within 15 miles — No upcharge
+            Within 10 miles — No upcharge
           </div>
           <div class="map-legend-item">
-            <div class="legend-swatch legend-upcharge"></div>
-            15–25 miles — $25 trip upcharge
+            <div class="legend-swatch legend-upcharge25"></div>
+            10–15 miles — $25 travel fee
+          </div>
+          <div class="map-legend-item">
+            <div class="legend-swatch legend-upcharge50"></div>
+            15–20 miles — $50 travel fee
           </div>
           <div style="margin-left:auto;font-size:.8rem;color:rgba(255,255,255,.35);">Centered on Downtown Denver</div>
         </div>
@@ -926,26 +931,39 @@
         maxZoom: 19
       }).addTo(map);
 
-      // 15-mile radius = 24,140 meters — In Service Area
+      // Draw largest to smallest so inner circles visually override outer fills
+
+      // 20-mile radius = 32,187 m — $50 travel fee zone
+      L.circle(center, {
+        radius: 32187,
+        color: '#c83c28',
+        weight: 2,
+        opacity: 0.85,
+        dashArray: '6 5',
+        fillColor: '#c83c28',
+        fillOpacity: 0.12
+      }).addTo(map).bindTooltip('<strong>$50 Travel Fee</strong><br>15–20 miles from Downtown Denver', { sticky: true });
+
+      // 15-mile radius = 24,140 m — $25 travel fee zone
       L.circle(center, {
         radius: 24140,
-        color: '#D4900A',
-        weight: 2,
-        opacity: 1,
-        fillColor: '#D4900A',
-        fillOpacity: 0.18
-      }).addTo(map).bindTooltip('<strong>In Service Area</strong><br>Within 15 miles — no upcharge', { sticky: true });
-
-      // 25-mile radius = 40,234 meters — $25 Upcharge ring
-      L.circle(center, {
-        radius: 40234,
         color: '#e07820',
         weight: 2,
         opacity: 0.9,
         dashArray: '8 6',
         fillColor: '#e07820',
-        fillOpacity: 0.07
-      }).addTo(map).bindTooltip('<strong>$25 Upcharge Area</strong><br>15–25 miles from Downtown Denver', { sticky: true });
+        fillOpacity: 0.18
+      }).addTo(map).bindTooltip('<strong>$25 Travel Fee</strong><br>10–15 miles from Downtown Denver', { sticky: true });
+
+      // 10-mile radius = 16,093 m — No upcharge zone
+      L.circle(center, {
+        radius: 16093,
+        color: '#D4900A',
+        weight: 2,
+        opacity: 1,
+        fillColor: '#D4900A',
+        fillOpacity: 0.22
+      }).addTo(map).bindTooltip('<strong>No Upcharge</strong><br>Within 10 miles — standard pricing', { sticky: true });
 
       // Downtown Denver marker
       var icon = L.divIcon({
