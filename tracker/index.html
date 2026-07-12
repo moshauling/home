@@ -75,6 +75,7 @@ nav{background:var(--dark);color:#fff;height:var(--nav);display:flex;align-items
 .b-completed{background:#f3f4f6;color:#9ca3af}
 .b-scheduled{background:#dcfce7;color:#15803d}
 .b-reserved{background:#dbeafe;color:#1d4ed8}
+.loc-pending{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#b45309;background:#fef3c7;border:1px solid #fcd34d;border-radius:3px;padding:2px 7px;margin-top:5px}
 
 /* BUTTONS */
 .btn{padding:11px 18px;border-radius:4px;border:none;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .15s,background .15s;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-family:'Inter',sans-serif;letter-spacing:.2px}
@@ -311,6 +312,10 @@ code{background:#e5e7eb;padding:1px 5px;border-radius:3px;font-size:11.5px;font-
   <div id="map"></div>
   <div class="map-overlay" id="map-stats"></div>
   <div id="today-banner" style="display:none;position:absolute;bottom:0;left:0;right:0;z-index:500;background:#15803d;color:#fff;padding:10px 14px;max-height:40vh;overflow-y:auto"></div>
+  <div id="pin-placement-banner" style="display:none;position:absolute;top:0;left:0;right:0;z-index:600;background:#b45309;color:#fff;padding:12px 16px;display:none;align-items:center;justify-content:space-between;gap:10px">
+    <span style="font-size:13px;font-weight:600">📍 Tap anywhere on the map to place the pin</span>
+    <button onclick="cancelPinPlacement()" style="background:rgba(255,255,255,.2);border:none;color:#fff;padding:6px 14px;border-radius:4px;font-size:13px;cursor:pointer;white-space:nowrap">Cancel</button>
+  </div>
 </div>
 
 <!-- NEW RENTAL -->
@@ -865,8 +870,8 @@ async function s2next(){
   draft.customPickupDate=cpVal||'';
   toast('Locating address on map…');
   const geo=await geocode(addr);
-  if(geo){draft.lat=geo.lat;draft.lng=geo.lng}
-  else toast('Address not found on map — you can still continue','err');
+  if(geo){draft.lat=geo.lat;draft.lng=geo.lng;draft.locationPending=false;}
+  else{draft.lat=null;draft.lng=null;draft.locationPending=true;toast('Address not found — record saved as Location To Be Set','err');}
   // Assign ID and save as reserved so it appears on map + rentals immediately
   if(!draft.id) draft.id=uid();
   const pu=draft.customPickupDate?new Date(draft.customPickupDate+'T12:00:00'):(()=>{const d=new Date(draft.dropoffDate);d.setDate(d.getDate()+draft.rentalDays);return d;})();
@@ -876,6 +881,7 @@ async function s2next(){
       renterAddress:draft.renterAddress||'',renterCity:draft.renterCity||'',
       renterState:draft.renterState||'CO',renterZip:draft.renterZip||''},
     service:{address:draft.address,lat:draft.lat,lng:draft.lng,
+      locationPending:draft.locationPending||false,
       dropoffDate:draft.dropoffDate,rentalDays:draft.rentalDays,
       customPickupDate:draft.customPickupDate||'',
       pickupDate:pu.toISOString(),price:draft.price||0},
@@ -914,6 +920,7 @@ async function finishRental(){
     },
     service:{
       address:draft.address,lat:draft.lat,lng:draft.lng,
+      locationPending:draft.locationPending||false,
       dropoffDate:draft.dropoffDate,rentalDays:draft.rentalDays,
       customPickupDate:draft.customPickupDate||'',
       pickupDate:pu.toISOString(),price:draft.price
@@ -1189,7 +1196,7 @@ function renderList(){
       ?`<span>${BIN}</span><span>Scheduled Drop-off: <strong>${fmtDS(r.service.dropoffDate)}</strong></span><span>${r.customer.email}</span>`
       :`<span>${BIN}</span><span>Drop-off: <strong>${fmtDS(r.service.dropoffDate)}</strong></span><span>Pick-up: <strong>${fmtDS(r.service.pickupDate||'')}</strong></span><span>$${r.service.price||0}</span>`;
     return`<div class="rc ${s}" onclick="showDetail('${r.id}')">
-      <div class="rc-top"><div><div class="rc-name">${esc(r.customer.name)}</div><div class="rc-addr">${esc(r.service.address)}</div></div>${badge(s)}</div>
+      <div class="rc-top"><div><div class="rc-name">${esc(r.customer.name)}</div><div class="rc-addr">${esc(r.service.address)}</div>${r.service.locationPending?'<div class="loc-pending">📍 Location To Be Set</div>':''}</div>${badge(s)}</div>
       <div class="rc-meta">${meta}</div>
     </div>`;
   }).join('');
@@ -1222,6 +1229,17 @@ function showDetail(id){
       ${s!=='scheduled'?`<div class="d-row"><span class="d-key">Rental Fee</span><span class="d-val">$${r.service.price}</span></div>`:''}
       ${s==='completed'&&r.completedAt?`<div class="d-row"><span class="d-key">Completed</span><span class="d-val">${fmtD(r.completedAt)}</span></div>`:''}
     </div>
+    ${r.service.locationPending?`
+    <div class="d-section" style="background:#fef9ec;border:1.5px solid #fcd34d;border-radius:6px;padding:12px 14px">
+      <h4 style="color:#b45309;margin-bottom:10px">📍 Location To Be Set</h4>
+      <div style="font-size:13px;color:#92400e;margin-bottom:12px">This record has no map pin. Re-try the address or place a pin manually on the map.</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <input id="retry-addr-${id}" type="text" value="${esc(r.service.address)}" style="flex:1;padding:8px 10px;border:1.5px solid #fcd34d;border-radius:4px;font-size:13px;background:#fff">
+        <button class="btn btn-sm" style="background:#b45309;color:#fff;white-space:nowrap" onclick="retryGeocode('${id}')">Try Again</button>
+      </div>
+      <button class="btn btn-sm btn-outline" style="width:100%" onclick="startPinPlacement('${id}')">Place Pin Manually on Map →</button>
+    </div>`:''}
+
     ${r.agreement?`
     <div class="d-section">
       <h4>Signed Agreement</h4>
@@ -1405,6 +1423,64 @@ function toast(msg,type=''){
   requestAnimationFrame(()=>t.classList.add('show'));
   setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),220)},3200);
 }
+
+// ── MANUAL PIN PLACEMENT ─────────────────────────────────────────
+let pinPlacementId=null,pinPlacementHandler=null;
+
+function startPinPlacement(id){
+  closeDetail();
+  pinPlacementId=id;
+  const r=Store.rentals().find(r=>r.id===id);
+  const banner=document.getElementById('pin-placement-banner');
+  if(banner){
+    banner.style.display='flex';
+    banner.querySelector('span').textContent=`📍 Tap the map to place pin for ${r?esc(r.customer.name):'this record'}`;
+  }
+  nav('dashboard');
+  MAP.getContainer().style.cursor='crosshair';
+  pinPlacementHandler=function(e){
+    const rs=Store.rentals();
+    const rec=rs.find(r=>r.id===pinPlacementId);
+    if(rec){
+      rec.service.lat=e.latlng.lat;
+      rec.service.lng=e.latlng.lng;
+      rec.service.locationPending=false;
+      Store.saveRentals(rs);
+      refreshMap();
+      toast('Pin placed for '+rec.customer.name,'ok');
+    }
+    cancelPinPlacement();
+  };
+  MAP.once('click',pinPlacementHandler);
+}
+
+function cancelPinPlacement(){
+  if(pinPlacementHandler) MAP.off('click',pinPlacementHandler);
+  pinPlacementHandler=null;pinPlacementId=null;
+  MAP.getContainer().style.cursor='';
+  const banner=document.getElementById('pin-placement-banner');
+  if(banner) banner.style.display='none';
+}
+
+async function retryGeocode(id){
+  const input=document.getElementById('retry-addr-'+id);
+  const addr=input?input.value.trim():'';
+  if(!addr) return;
+  toast('Looking up address…');
+  const geo=await geocode(addr);
+  if(!geo){toast('Still not found — try placing manually','err');return;}
+  const rs=Store.rentals();
+  const r=rs.find(r=>r.id===id);
+  if(r){
+    r.service.lat=geo.lat;r.service.lng=geo.lng;
+    r.service.address=addr;r.service.locationPending=false;
+    Store.saveRentals(rs);
+    refreshMap();renderList();
+    closeDetail();
+    toast('Location set for '+r.customer.name,'ok');
+  }
+}
+// ─────────────────────────────────────────────────────────────────
 
 // ── CALENDLY SYNC ────────────────────────────────────────────────
 async function syncCalendly(){
