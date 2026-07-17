@@ -412,8 +412,9 @@ code{background:#e5e7eb;padding:1px 5px;border-radius:3px;font-size:11.5px;font-
       </div>
       <div class="fg"><label>Firebase API Key</label><input type="text" id="s-fbkey" placeholder="AIzaSy..." oninput="saveSetting()"></div>
       <div class="fg"><label>Firebase Project ID</label><input type="text" id="s-fbproject" placeholder="your-project-id" oninput="saveSetting()"></div>
-      <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
+      <div style="display:flex;align-items:center;gap:10px;margin-top:4px;flex-wrap:wrap">
         <button class="btn btn-primary btn-sm" onclick="startCloudSync()">Connect &amp; Sync</button>
+        <button class="btn btn-ghost btn-sm" onclick="forcePushToCloud()">Force Push Local → Cloud</button>
         <span id="cloud-status" style="font-size:13px;color:var(--muted)">Not connected</span>
       </div>
     </div>
@@ -1643,14 +1644,24 @@ function watchCloud(){
   if(fbUnsubscribe) fbUnsubscribe();
   let isFirst=true;
   fbUnsubscribe=fbDb.collection('rentals').onSnapshot(snap=>{
-    if(isFirst && snap.empty){
+    const cloudRentals=snap.docs.map(d=>d.data());
+    const localRentals=Store.rentals();
+    if(isFirst){
       isFirst=false;
-      const local=Store.rentals();
-      if(local.length>0){pushToCloud(local);return;}
+      // Merge: union of cloud + local, cloud wins on ID conflicts
+      const merged=Object.values(
+        [...localRentals,...cloudRentals].reduce((acc,r)=>{if(r&&r.id) acc[r.id]=r;return acc},{})
+      );
+      const localOnlyIds=localRentals.filter(r=>r&&r.id&&!cloudRentals.find(c=>c.id===r.id));
+      localStorage.setItem('mh_r',JSON.stringify(merged));
+      if(localOnlyIds.length>0) pushToCloud(merged); // push any local-only records up
+    } else {
+      // After first sync: merge incoming cloud changes with local
+      const merged=Object.values(
+        [...localRentals,...cloudRentals].reduce((acc,r)=>{if(r&&r.id) acc[r.id]=r;return acc},{})
+      );
+      localStorage.setItem('mh_r',JSON.stringify(merged));
     }
-    isFirst=false;
-    const rentals=snap.docs.map(d=>d.data());
-    localStorage.setItem('mh_r',JSON.stringify(rentals));
     refreshMap();
     if(document.getElementById('view-rentals').classList.contains('active')) renderList();
     updateCloudStatus(true);
@@ -1665,6 +1676,14 @@ function updateCloudStatus(ok){
   if(!el) return;
   el.textContent=ok?'✓ Connected — syncing in real-time':'✗ Sync error — check console';
   el.style.color=ok?'#16a34a':'#b91c1c';
+}
+
+async function forcePushToCloud(){
+  if(!fbDb){toast('Not connected to cloud — try refreshing','err');return;}
+  const rs=Store.rentals();
+  if(!rs.length){toast('No local records to push','err');return;}
+  await pushToCloud(rs);
+  toast(`Pushed ${rs.length} record${rs.length>1?'s':''} to cloud`,'ok');
 }
 
 async function startCloudSync(){
