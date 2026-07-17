@@ -1216,7 +1216,7 @@ function renderList(){
       ?`<span>${BIN}</span><span>Scheduled Drop-off: <strong>${fmtDS(r.service.dropoffDate)}</strong></span><span>${r.customer.email}</span>`
       :`<span>${BIN}</span><span>Drop-off: <strong>${fmtDS(r.service.dropoffDate)}</strong></span><span>Pick-up: <strong>${fmtDS(r.service.pickupDate||'')}</strong></span><span>$${r.service.price||0}</span>`;
     return`<div class="rc ${s}" onclick="showDetail('${r.id}')">
-      <div class="rc-top"><div><div class="rc-name">${esc(r.customer.name)}</div><div class="rc-addr">${esc(r.service.address)}</div>${r.service.locationPending?'<div class="loc-pending">📍 Location To Be Set</div>':''}</div>${badge(s)}</div>
+      <div class="rc-top"><div><div class="rc-name">${esc(r.customer.name)}</div><div class="rc-addr">${esc(r.service.address)}</div>${(!r.service.lat&&!r.service.lng)?'<div class="loc-pending">📍 Location To Be Set</div>':''}</div>${badge(s)}</div>
       <div class="rc-meta">${meta}</div>
     </div>`;
   }).join('');
@@ -1249,7 +1249,7 @@ function showDetail(id){
       ${s!=='scheduled'?`<div class="d-row"><span class="d-key">Rental Fee</span><span class="d-val">$${r.service.price}</span></div>`:''}
       ${s==='completed'&&r.completedAt?`<div class="d-row"><span class="d-key">Completed</span><span class="d-val">${fmtD(r.completedAt)}</span></div>`:''}
     </div>
-    ${r.service.locationPending?`
+    ${(!r.service.lat&&!r.service.lng)?`
     <div class="d-section" style="background:#fef9ec;border:1.5px solid #fcd34d;border-radius:6px;padding:12px 14px">
       <h4 style="color:#b45309;margin-bottom:10px">📍 Location To Be Set</h4>
       <div style="font-size:13px;color:#92400e;margin-bottom:12px">This record has no map pin. Re-try the address or place a pin manually on the map.</div>
