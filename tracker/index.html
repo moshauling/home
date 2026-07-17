@@ -114,6 +114,8 @@ textarea{resize:none}
 .period-picker{display:flex;gap:12px}
 .po{flex:1;border:2px solid var(--border);border-radius:4px;padding:16px 12px;text-align:center;cursor:pointer;transition:.15s;background:#fff}
 .po.selected{border-color:var(--orange);background:var(--orange-pale)}
+.travel-po{flex:1;border:1.5px solid var(--border);border-radius:4px;padding:10px 6px;text-align:center;cursor:pointer;transition:.15s;background:#fff}
+.travel-po.selected{border-color:var(--orange);background:var(--orange-pale)}
 .po .pd{font-family:'Oswald',sans-serif;font-size:32px;font-weight:700;color:var(--orange);line-height:1}
 .po .pl{font-size:12px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
 .po .pp{font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:var(--dark);margin-top:8px}
@@ -684,12 +686,17 @@ function renderStep(s){
       </div>
       <div class="fg">
         <label>Travel Fee — optional</label>
-        <div style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:#f9fafb;border:1.5px solid var(--border);border-radius:4px;cursor:pointer" onclick="toggleTravel()">
-          <div id="travel-check" style="width:20px;height:20px;border-radius:4px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.15s;background:${draft.travelFee?'var(--orange)':'#fff'};border-color:${draft.travelFee?'var(--orange)':'var(--border)'}">
-            ${draft.travelFee?'<svg viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="2,6 5,9 10,3"/></svg>':''}
-          </div>
-          <span style="font-size:14px;font-weight:600;color:var(--dark)">Add $25 Travel Fee</span>
+        <div style="display:flex;gap:8px">
+          ${[0,25,50].map(amt=>`<div class="travel-po${(draft.travelFee||0)===amt?' selected':''}" onclick="selTravel(${amt})" style="flex:1;text-align:center;padding:10px 6px;border:1.5px solid var(--border);border-radius:4px;cursor:pointer;transition:.15s">
+            <div style="font-family:'Oswald',sans-serif;font-size:15px;font-weight:700;color:var(--dark)">${amt===0?'None':'$'+amt}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">${amt===0?'No fee':amt===25?'10–20 mi':'20–25 mi'}</div>
+          </div>`).join('')}
         </div>
+      </div>
+      <div class="fg">
+        <label>Custom Price — optional</label>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Overrides standard pricing entirely. Leave blank to use standard rates.</div>
+        <input id="f-custom-price" type="number" min="0" value="${draft.customPrice||''}" placeholder="Enter custom total…" oninput="updatePriceSummary()">
       </div>
       <div class="fg">
         <label>Discount ($) — optional</label>
@@ -719,8 +726,9 @@ function renderStep(s){
   }
 
   else if(s===3){
-    const pu=new Date(draft.dropoffDate);
-    pu.setDate(pu.getDate()+draft.rentalDays);
+    const pu=draft.customPickupDate
+      ?new Date(draft.customPickupDate+'T12:00:00')
+      :(()=>{const d=new Date(draft.dropoffDate);d.setDate(d.getDate()+draft.rentalDays);return d;})();
     draft.pickupDate=pu.toISOString();
     el.innerHTML=`
     <div class="card">
@@ -822,28 +830,39 @@ function selPeriod(d){
   updatePriceSummary();
 }
 
-function toggleTravel(){
-  draft.travelFee=!draft.travelFee;
-  const box=document.getElementById('travel-check');
-  if(box){
-    box.style.background=draft.travelFee?'var(--orange)':'#fff';
-    box.style.borderColor=draft.travelFee?'var(--orange)':'var(--border)';
-    box.innerHTML=draft.travelFee?'<svg viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="2,6 5,9 10,3"/></svg>':'';
-  }
+function selTravel(amt){
+  draft.travelFee=amt;
+  document.querySelectorAll('.travel-po').forEach((el,i)=>
+    el.classList.toggle('selected',[0,25,50][i]===amt)
+  );
   updatePriceSummary();
 }
 
 function updatePriceSummary(){
+  const summary=document.getElementById('price-summary');
+  if(!summary) return;
+  const customPriceInput=document.getElementById('f-custom-price');
+  const customPrice=customPriceInput?parseFloat(customPriceInput.value)||0:draft.customPrice||0;
+  draft.customPrice=customPrice||0;
+  if(customPrice>0){
+    draft.price=customPrice;
+    summary.style.display='block';
+    document.getElementById('ps-base').textContent='Custom';
+    document.getElementById('ps-travel').textContent='—';
+    document.getElementById('ps-travel-row').style.opacity='0.4';
+    document.getElementById('ps-disc').textContent='—';
+    document.getElementById('ps-disc-row').style.opacity='0.4';
+    document.getElementById('ps-total').textContent='$'+customPrice;
+    return;
+  }
   if(!draft.rentalDays) return;
   const base=PRICE[draft.rentalDays];
   const discInput=document.getElementById('f-disc');
   const disc=discInput?Math.max(0,parseFloat(discInput.value)||0):draft.discount||0;
   draft.discount=disc;
-  const travel=draft.travelFee?25:0;
+  const travel=typeof draft.travelFee==='boolean'?(draft.travelFee?25:0):(draft.travelFee||0);
   const total=Math.max(0,base+travel-disc);
   draft.price=total;
-  const summary=document.getElementById('price-summary');
-  if(!summary) return;
   summary.style.display='block';
   document.getElementById('ps-base').textContent='$'+base;
   document.getElementById('ps-travel').textContent=travel>0?'+$'+travel:'—';
@@ -939,8 +958,8 @@ async function finishRental(){
 
 function agreementHTML(d,isEmail=false){
   const cfg=Store.settings();
-  const csz=[d.renterCity,d.renterState,d.renterZip].filter(Boolean).join(', ')||'&nbsp;';
-  const rentalPeriodText=d.rentalDays===3?'Three (3) Calendar Days':'Seven (7) Calendar Days';
+  const csz=[d.renterCity,d.renterState,d.renterZip].filter(Boolean).join(', ');
+  const rentalPeriodText=d.customPickupDate?'Custom Pickup Date':d.rentalDays===3?'Three (3) Calendar Days':'Seven (7) Calendar Days';
   const rentalFee=d.price?`$${d.price}.00`:'$______';
   const wrapStyle=isEmail?'font-family:Arial,sans-serif;max-width:680px;margin:0 auto;':'';
   return`<div style="${wrapStyle}">
@@ -953,8 +972,8 @@ function agreementHTML(d,isEmail=false){
 <table class="agr-table">
   <tr><td>Agreement Date</td><td><span class="agr-field">${d.signedAt?fmtD(d.signedAt):fmtD(new Date().toISOString())}</span></td></tr>
   <tr><td>Renter</td><td><span class="agr-field">${esc(d.name||'')}</span></td></tr>
-  <tr><td>Renter Address</td><td><span class="agr-field">${esc(d.renterAddress||'')}</span></td></tr>
-  <tr><td>City / State / Zip</td><td><span class="agr-field">${esc(csz)}</span></td></tr>
+  ${d.renterAddress?`<tr><td>Renter Address</td><td><span class="agr-field">${esc(d.renterAddress)}</span></td></tr>`:''}
+  ${csz?`<tr><td>City / State / Zip</td><td><span class="agr-field">${esc(csz)}</span></td></tr>`:''}
   <tr><td>Phone</td><td><span class="agr-field">${esc(d.phone||'')}</span></td></tr>
   <tr><td>Email</td><td><span class="agr-field">${esc(d.email||'')}</span></td></tr>
 </table>
@@ -1262,8 +1281,9 @@ function showDetail(id){
           ?`<button class="btn btn-primary" style="flex:1" onclick="completeAgreement('${id}')">Complete Agreement →</button>
              <button class="btn btn-danger btn-sm" onclick="delRental('${id}')">Cancel</button>`
           :s==='completed'
-            ?`<span style="font-size:13px;color:var(--muted)">Archived — ${r.completedAt?fmtD(r.completedAt):'completed'}</span>`
+            ?`<button class="btn btn-primary" style="flex:1" onclick="renewRental('${id}')">Renew — New Bin →</button>`
             :`<button class="btn btn-primary" style="flex:1" onclick="markDone('${id}')">Mark Completed</button>
+               <button class="btn btn-ghost btn-sm" onclick="renewRental('${id}')">Renew Bin</button>
                <button class="btn btn-ghost btn-sm" onclick="extendRental('${id}')">Extend</button>`}
     </div>`;
   document.getElementById('detail-backdrop').classList.add('open');
@@ -1276,6 +1296,29 @@ function markDone(id){
   const rs=Store.rentals();const r=rs.find(r=>r.id===id);
   if(r){r.status='completed';r.completedAt=new Date().toISOString();Store.saveRentals(rs)}
   closeDetail();renderList();refreshMap();toast('Marked as completed','ok');
+}
+
+function renewRental(id){
+  const r=Store.rentals().find(r=>r.id===id);if(!r) return;
+  closeDetail();
+  // Pre-fill customer info from existing rental, reset service fields for new booking
+  draft={
+    id:null,
+    name:r.customer.name,email:r.customer.email,phone:r.customer.phone,
+    renterAddress:r.customer.renterAddress||'',renterCity:r.customer.renterCity||'',
+    renterState:r.customer.renterState||'CO',renterZip:r.customer.renterZip||'',
+    address:'',lat:null,lng:null,locationPending:false,
+    dropoffDate:'',rentalDays:7,customPickupDate:'',
+    travelFee:0,discount:0,customPrice:0,price:0,
+    sigDataUrl:null,signedAt:null
+  };
+  // Navigate to new-rental but skip step 1 — jump straight to service details
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-new-rental').classList.add('active');
+  document.getElementById('nb-new-rental').classList.add('active');
+  renderStep(2);
+  toast('Customer info loaded — fill in new service details','ok');
 }
 
 function extendRental(id){
