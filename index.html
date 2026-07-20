@@ -411,6 +411,19 @@
     .qm-submit:hover { background: var(--gold-light); transform: translateY(-1px); }
     .qm-submit:disabled { opacity: .6; cursor: default; transform: none; }
     .qm-note { text-align: center; font-size: .76rem; color: rgba(255,255,255,.25); margin-top: 12px; }
+    .qm-photo-zone {
+      border: 2px dashed rgba(255,255,255,.14); border-radius: 8px; padding: 18px 16px;
+      text-align: center; cursor: pointer; transition: border-color .2s, background .2s;
+      background: rgba(255,255,255,.03);
+    }
+    .qm-photo-zone:hover, .qm-photo-zone.drag-over { border-color: var(--gold); background: rgba(212,144,10,.06); }
+    .qm-photo-zone svg { opacity: .3; }
+    .qm-photo-zone-text { font-size: .8rem; color: rgba(255,255,255,.3); margin-top: 6px; line-height: 1.5; }
+    .qm-photo-zone-text span { color: var(--gold-light); font-weight: 600; }
+    .qm-previews { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .qm-thumb { position: relative; width: 76px; height: 76px; border-radius: 6px; overflow: hidden; border: 1.5px solid rgba(255,255,255,.12); flex-shrink: 0; }
+    .qm-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .qm-thumb-rm { position: absolute; top: 3px; right: 3px; background: rgba(0,0,0,.75); border: none; color: #fff; width: 18px; height: 18px; border-radius: 50%; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; }
     .qm-success { text-align: center; padding: 20px 0; }
     .qm-success-icon { font-size: 3.5rem; margin-bottom: 18px; display: block; }
     .qm-success h3 { font-family: 'Oswald', sans-serif; font-size: 1.6rem; color: var(--white); margin-bottom: 10px; }
@@ -1242,6 +1255,18 @@
             <label>Tell Us About the Job</label>
             <textarea name="message" placeholder="Describe what needs to be removed, the approximate size or volume, and any access details or special considerations…"></textarea>
           </div>
+          <div class="qm-field">
+            <label>📷 Photos (optional — up to 3 images)</label>
+            <input type="file" id="qm-photo-input" accept="image/*" multiple style="display:none" onchange="handlePhotoSelect(this.files)">
+            <div class="qm-photo-zone" id="qm-photo-zone" onclick="document.getElementById('qm-photo-input').click()"
+                 ondragover="event.preventDefault();this.classList.add('drag-over')"
+                 ondragleave="this.classList.remove('drag-over')"
+                 ondrop="event.preventDefault();this.classList.remove('drag-over');handlePhotoSelect(event.dataTransfer.files)">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              <div class="qm-photo-zone-text">Drag &amp; drop photos here, or <span>click to browse</span><br>JPG, PNG, HEIC · max 3 images</div>
+            </div>
+            <div class="qm-previews" id="qm-previews"></div>
+          </div>
           <button class="qm-submit" type="submit" id="qm-submit-btn">Send My Free Quote Request →</button>
           <p class="qm-note">🔒 No spam, ever. We'll reach out by phone or email within a few hours.</p>
         </form>
@@ -1281,24 +1306,78 @@
     });
 
     // ── FREE QUOTE MODAL ──
-    // EmailJS template needed: service_nnqpehg / template_quote_req
-    // Template variables: {{from_name}}, {{phone}}, {{email}}, {{service_type}}, {{message}}
-    // Set "To Email" in template to: eric@moshauling.co
+    // EmailJS template: service_nnqpehg / template_quote_req
+    // Variables: {{from_name}} {{phone}} {{email}} {{service_type}} {{message}} {{photos_html}}
+    // Set To Email → eric@moshauling.co
+
+    let qmPhotos = []; // array of compressed base64 strings
+
+    async function compressImage(file, maxW = 1100, quality = 0.72) {
+      return new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = ev => {
+          const img = new Image();
+          img.onload = () => {
+            let w = img.width, h = img.height;
+            if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+          };
+          img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function handlePhotoSelect(files) {
+      const remaining = 3 - qmPhotos.length;
+      if (remaining <= 0) return;
+      const toProcess = Array.from(files).slice(0, remaining);
+      for (const file of toProcess) {
+        if (!file.type.startsWith('image/')) continue;
+        const b64 = await compressImage(file);
+        qmPhotos.push(b64);
+      }
+      renderPhotoPreviews();
+      // Reset input so the same file can be re-added after removal
+      document.getElementById('qm-photo-input').value = '';
+    }
+
+    function renderPhotoPreviews() {
+      const wrap = document.getElementById('qm-previews');
+      const zone = document.getElementById('qm-photo-zone');
+      wrap.innerHTML = qmPhotos.map((src, i) => `
+        <div class="qm-thumb">
+          <img src="${src}" alt="Photo ${i+1}">
+          <button type="button" class="qm-thumb-rm" onclick="removePhoto(${i})">✕</button>
+        </div>`).join('');
+      zone.style.display = qmPhotos.length >= 3 ? 'none' : '';
+    }
+
+    function removePhoto(i) {
+      qmPhotos.splice(i, 1);
+      renderPhotoPreviews();
+    }
+
     function openQuoteModal(preselect) {
-      const overlay = document.getElementById('quote-overlay');
       document.getElementById('qm-form-wrap').style.display = '';
       document.getElementById('qm-success').style.display = 'none';
       document.getElementById('quote-form').reset();
       document.getElementById('qm-submit-btn').textContent = 'Send My Free Quote Request →';
       document.getElementById('qm-submit-btn').disabled = false;
+      qmPhotos = [];
+      renderPhotoPreviews();
       if (preselect) {
         const sel = document.querySelector('#quote-form [name="service_type"]');
         if (sel) sel.value = preselect;
       }
-      overlay.classList.add('open');
+      document.getElementById('quote-overlay').classList.add('open');
       document.body.style.overflow = 'hidden';
       setTimeout(() => document.querySelector('#quote-form [name="from_name"]').focus(), 200);
     }
+
     function closeQuoteModal() {
       document.getElementById('quote-overlay').classList.remove('open');
       document.body.style.overflow = '';
@@ -1309,11 +1388,22 @@
       e.preventDefault();
       const form = e.target;
       const get = n => (form.querySelector('[name="'+n+'"]').value || '').trim();
-      if (!get('from_name')) { form.querySelector('[name="from_name"]').focus(); return; }
-      if (!get('phone'))     { form.querySelector('[name="phone"]').focus(); return; }
+      if (!get('from_name'))    { form.querySelector('[name="from_name"]').focus(); return; }
+      if (!get('phone'))        { form.querySelector('[name="phone"]').focus(); return; }
       if (!get('service_type')) { form.querySelector('[name="service_type"]').focus(); return; }
       const btn = document.getElementById('qm-submit-btn');
-      btn.textContent = 'Sending…'; btn.disabled = true;
+      btn.textContent = qmPhotos.length ? 'Uploading photos…' : 'Sending…';
+      btn.disabled = true;
+
+      // Build inline photos HTML for the email template
+      const photosHtml = qmPhotos.length
+        ? '<div style="margin-top:24px"><div style="font-size:11px;font-weight:700;color:#9CA3AF;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;">PHOTOS</div>'
+          + qmPhotos.map((src, i) =>
+              `<img src="${src}" alt="Photo ${i+1}" style="max-width:100%;border-radius:6px;margin-bottom:10px;display:block;">`
+            ).join('')
+          + '</div>'
+        : '';
+
       try {
         await emailjs.send('service_nnqpehg', 'template_quote_req', {
           from_name:    get('from_name'),
@@ -1322,19 +1412,20 @@
           service_type: get('service_type'),
           message:      get('message') || 'No additional details.',
           to_email:     'eric@moshauling.co',
-          reply_to:     get('email') || 'noreply@moshauling.co'
+          reply_to:     get('email') || 'noreply@moshauling.co',
+          photos_html:  photosHtml
         });
         if (typeof gtag !== 'undefined') gtag('event', 'quote_form_submit', { service_type: get('service_type') });
         document.getElementById('qm-form-wrap').style.display = 'none';
         document.getElementById('qm-success').style.display = '';
       } catch(err) {
         console.error('Quote form error:', err);
-        // Fallback: open mailto so no lead is lost
         const sub  = encodeURIComponent('Free Quote Request – ' + get('service_type'));
         const body = encodeURIComponent(
-          'Name: ' + get('from_name') + '\nPhone: ' + get('phone') +
-          '\nEmail: ' + (get('email')||'—') + '\nService: ' + get('service_type') +
-          '\n\n' + (get('message')||'')
+          'Name: '    + get('from_name') + '\nPhone: ' + get('phone') +
+          '\nEmail: '  + (get('email') || '—') + '\nService: ' + get('service_type') +
+          '\n\n'       + (get('message') || '') +
+          (qmPhotos.length ? '\n\n[' + qmPhotos.length + ' photo(s) attached — please reply for customer to resend]' : '')
         );
         window.location.href = 'mailto:eric@moshauling.co?subject=' + sub + '&body=' + body;
         btn.textContent = 'Send My Free Quote Request →'; btn.disabled = false;
