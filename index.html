@@ -18,6 +18,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Oswald:wght@500;600;700&family=Rye&display=swap" rel="stylesheet" />
   <link rel="icon" type="image/png" href="logo.png" />
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script>emailjs.init('UArlcTXupXk48WJ10');</script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -359,6 +361,80 @@
     .footer-bottom p { font-size: .82rem; color: rgba(255,255,255,.3); }
     .footer-bottom a { color: rgba(255,255,255,.4); text-decoration: none; }
 
+    /* ── QUOTE MODAL ── */
+    .qm-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,.75);
+      z-index: 9999; align-items: center; justify-content: center; padding: 16px;
+      backdrop-filter: blur(4px);
+    }
+    .qm-overlay.open { display: flex; animation: qmFadeIn .2s ease; }
+    @keyframes qmFadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .qm-box {
+      background: var(--dark-2); border-radius: 16px; padding: 40px;
+      width: 100%; max-width: 520px; max-height: 92dvh; overflow-y: auto;
+      position: relative; box-shadow: 0 32px 80px rgba(0,0,0,.7);
+      border: 1px solid rgba(212,144,10,.25);
+      animation: qmSlideUp .25s ease;
+    }
+    @keyframes qmSlideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .qm-close {
+      position: absolute; top: 14px; right: 14px;
+      background: rgba(255,255,255,.08); border: none; color: rgba(255,255,255,.5);
+      width: 32px; height: 32px; border-radius: 8px; font-size: 1rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; transition: background .2s, color .2s;
+    }
+    .qm-close:hover { background: rgba(255,255,255,.15); color: #fff; }
+    .qm-eyebrow { font-size: .72rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; }
+    .qm-title { font-family: 'Oswald', sans-serif; font-size: 1.9rem; font-weight: 700; color: var(--white); margin-bottom: 4px; }
+    .qm-sub { font-size: .88rem; color: rgba(255,255,255,.45); margin-bottom: 26px; line-height: 1.55; }
+    .qm-field { margin-bottom: 14px; }
+    .qm-field label { display: block; font-size: .72rem; font-weight: 700; color: rgba(255,255,255,.4); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+    .qm-field input, .qm-field select, .qm-field textarea {
+      width: 100%; padding: 12px 15px; background: rgba(255,255,255,.05);
+      border: 1.5px solid rgba(255,255,255,.1); border-radius: 8px; color: var(--white);
+      font-family: 'Inter', sans-serif; font-size: .95rem; transition: border-color .2s;
+      -webkit-appearance: none; appearance: none;
+    }
+    .qm-field input:focus, .qm-field select:focus, .qm-field textarea:focus { outline: none; border-color: var(--gold); background: rgba(255,255,255,.07); }
+    .qm-field input::placeholder, .qm-field textarea::placeholder { color: rgba(255,255,255,.2); }
+    .qm-field select { color: rgba(255,255,255,.65); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23D4900A' stroke-width='1.5' fill='none'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+    .qm-field select option { background: #1C1E22; color: #fff; }
+    .qm-field textarea { resize: vertical; min-height: 90px; }
+    .qm-row { display: flex; gap: 12px; }
+    .qm-row .qm-field { flex: 1; }
+    .qm-submit {
+      width: 100%; background: var(--gold); color: var(--white); border: none;
+      font-family: 'Oswald', sans-serif; font-size: 1.1rem; font-weight: 600;
+      letter-spacing: .5px; padding: 15px; border-radius: 8px; cursor: pointer;
+      transition: background .2s, transform .15s; margin-top: 6px;
+    }
+    .qm-submit:hover { background: var(--gold-light); transform: translateY(-1px); }
+    .qm-submit:disabled { opacity: .6; cursor: default; transform: none; }
+    .qm-note { text-align: center; font-size: .76rem; color: rgba(255,255,255,.25); margin-top: 12px; }
+    .qm-success { text-align: center; padding: 20px 0; }
+    .qm-success-icon { font-size: 3.5rem; margin-bottom: 18px; display: block; }
+    .qm-success h3 { font-family: 'Oswald', sans-serif; font-size: 1.6rem; color: var(--white); margin-bottom: 10px; }
+    .qm-success p { color: rgba(255,255,255,.55); font-size: .92rem; line-height: 1.65; }
+    .qm-success a { color: var(--gold-light); }
+    .qm-trigger {
+      display: inline-flex; align-items: center; gap: 8px; background: transparent;
+      border: 2px solid rgba(255,255,255,.45); color: var(--white); font-weight: 700;
+      font-size: 1rem; padding: 14px 28px; border-radius: 6px; cursor: pointer;
+      font-family: 'Inter', sans-serif; transition: border-color .2s, background .2s, transform .15s;
+      text-decoration: none; letter-spacing: .2px;
+    }
+    .qm-trigger:hover { border-color: var(--white); background: rgba(255,255,255,.08); transform: translateY(-2px); }
+    .qm-trigger-dark {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(212,144,10,.12); border: 1.5px solid rgba(212,144,10,.5);
+      color: var(--gold-light); font-weight: 700; font-size: .9rem;
+      padding: 11px 20px; border-radius: 6px; cursor: pointer;
+      font-family: 'Inter', sans-serif; transition: background .2s, border-color .2s;
+      white-space: nowrap; letter-spacing: .2px;
+    }
+    .qm-trigger-dark:hover { background: rgba(212,144,10,.22); border-color: var(--gold); }
+    @media (max-width: 480px) { .qm-box { padding: 28px 18px; } .qm-row { flex-direction: column; gap: 0; } }
+
     /* ── MOBILE NAV ── */
     .mobile-nav {
       display: none; background: var(--dark-2); border-top: 1px solid rgba(255,255,255,.08);
@@ -479,7 +555,7 @@
             <a href="tel:7203408144" class="btn-primary btn-phone">
               📞 Call for a Free Quote
             </a>
-            <a href="#services" class="btn-outline">See Our Pricing</a>
+            <button onclick="openQuoteModal()" class="qm-trigger">📋 Get a Quote Online</button>
           </div>
           <div class="hero-stats">
             <div>
@@ -575,6 +651,7 @@
             <div style="font-size:.8rem;color:rgba(255,255,255,.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Questions? Call or text us</div>
             <a href="tel:7203408144" style="font-family:'Oswald',sans-serif;font-size:1.9rem;font-weight:700;color:var(--gold-light);text-decoration:none;">(720) 340-8144</a>
             <div style="font-size:.82rem;color:rgba(255,255,255,.4);margin-top:6px;">Mon – Sat, 7am – 7pm</div>
+            <button onclick="openQuoteModal()" class="qm-trigger-dark" style="margin-top:16px;width:100%;justify-content:center;">📋 Get a Free Quote Online</button>
           </div>
         </div>
       </div>
@@ -791,8 +868,9 @@
 
       </div>
       <p class="demo-disclaimer">Prices are estimates and subject to change based on site conditions, material weight, access, and job complexity. Contact us for a free on-site quote.</p>
-      <div style="text-align:center;margin-top:28px;">
+      <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:28px;">
         <a href="tel:7203408144" class="btn-primary" style="font-size:1.05rem;padding:16px 40px;">Get a Free Estimate — (720) 340-8144</a>
+        <button onclick="openQuoteModal()" class="qm-trigger" style="font-size:1.05rem;padding:16px 36px;">📋 Request a Quote Online</button>
       </div>
     </div>
   </section>
@@ -1122,6 +1200,64 @@
     </div>
   </footer>
 
+  <!-- FREE QUOTE MODAL -->
+  <div id="quote-overlay" class="qm-overlay" onclick="if(event.target===this)closeQuoteModal()">
+    <div class="qm-box">
+      <button class="qm-close" onclick="closeQuoteModal()" aria-label="Close">✕</button>
+      <div id="qm-form-wrap">
+        <div class="qm-eyebrow">Mo's Hauling</div>
+        <div class="qm-title">Get a Free Quote</div>
+        <div class="qm-sub">Fill this out and we'll get back to you within a few hours — usually much faster. No pressure, no commitment.</div>
+        <form id="quote-form" onsubmit="submitQuoteForm(event)" novalidate>
+          <div class="qm-row">
+            <div class="qm-field">
+              <label>Your Name *</label>
+              <input name="from_name" type="text" placeholder="Jane Smith" required autocomplete="name">
+            </div>
+            <div class="qm-field">
+              <label>Phone *</label>
+              <input name="phone" type="tel" placeholder="(720) 555-0100" required autocomplete="tel">
+            </div>
+          </div>
+          <div class="qm-field">
+            <label>Email Address</label>
+            <input name="email" type="email" placeholder="jane@email.com" autocomplete="email">
+          </div>
+          <div class="qm-field">
+            <label>Service Needed *</label>
+            <select name="service_type" required>
+              <option value="">Select a service…</option>
+              <option>Junk Removal</option>
+              <option>Dumpster Rental</option>
+              <option>Carpet / Floor Removal</option>
+              <option>Concrete Removal</option>
+              <option>Tree / Branch Removal</option>
+              <option>Dirt &amp; Soil Removal</option>
+              <option>Fence Removal</option>
+              <option>Property / Estate Clean-Out</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="qm-field">
+            <label>Tell Us About the Job</label>
+            <textarea name="message" placeholder="Describe what needs to be removed, the approximate size or volume, and any access details or special considerations…"></textarea>
+          </div>
+          <button class="qm-submit" type="submit" id="qm-submit-btn">Send My Free Quote Request →</button>
+          <p class="qm-note">🔒 No spam, ever. We'll reach out by phone or email within a few hours.</p>
+        </form>
+      </div>
+      <div id="qm-success" class="qm-success" style="display:none">
+        <span class="qm-success-icon">✅</span>
+        <h3>Request Sent!</h3>
+        <p>Thanks! We'll be in touch soon — usually within a few hours.<br><br>
+          Need to reach us sooner?<br>
+          <a href="tel:7203408144"><strong>(720) 340-8144</strong></a>
+        </p>
+        <button onclick="closeQuoteModal()" class="qm-submit" style="margin-top:24px;max-width:240px;margin-left:auto;margin-right:auto;display:block;">Close</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // Mobile nav toggle
     const toggle = document.getElementById('nav-toggle');
@@ -1144,6 +1280,68 @@
       });
     });
 
+    // ── FREE QUOTE MODAL ──
+    // EmailJS template needed: service_nnqpehg / template_quote_req
+    // Template variables: {{from_name}}, {{phone}}, {{email}}, {{service_type}}, {{message}}
+    // Set "To Email" in template to: eric@moshauling.co
+    function openQuoteModal(preselect) {
+      const overlay = document.getElementById('quote-overlay');
+      document.getElementById('qm-form-wrap').style.display = '';
+      document.getElementById('qm-success').style.display = 'none';
+      document.getElementById('quote-form').reset();
+      document.getElementById('qm-submit-btn').textContent = 'Send My Free Quote Request →';
+      document.getElementById('qm-submit-btn').disabled = false;
+      if (preselect) {
+        const sel = document.querySelector('#quote-form [name="service_type"]');
+        if (sel) sel.value = preselect;
+      }
+      overlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      setTimeout(() => document.querySelector('#quote-form [name="from_name"]').focus(), 200);
+    }
+    function closeQuoteModal() {
+      document.getElementById('quote-overlay').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeQuoteModal(); });
+
+    async function submitQuoteForm(e) {
+      e.preventDefault();
+      const form = e.target;
+      const get = n => (form.querySelector('[name="'+n+'"]').value || '').trim();
+      if (!get('from_name')) { form.querySelector('[name="from_name"]').focus(); return; }
+      if (!get('phone'))     { form.querySelector('[name="phone"]').focus(); return; }
+      if (!get('service_type')) { form.querySelector('[name="service_type"]').focus(); return; }
+      const btn = document.getElementById('qm-submit-btn');
+      btn.textContent = 'Sending…'; btn.disabled = true;
+      try {
+        await emailjs.send('service_nnqpehg', 'template_quote_req', {
+          from_name:    get('from_name'),
+          phone:        get('phone'),
+          email:        get('email') || 'Not provided',
+          service_type: get('service_type'),
+          message:      get('message') || 'No additional details.',
+          to_email:     'eric@moshauling.co',
+          reply_to:     get('email') || 'noreply@moshauling.co'
+        });
+        if (typeof gtag !== 'undefined') gtag('event', 'quote_form_submit', { service_type: get('service_type') });
+        document.getElementById('qm-form-wrap').style.display = 'none';
+        document.getElementById('qm-success').style.display = '';
+      } catch(err) {
+        console.error('Quote form error:', err);
+        // Fallback: open mailto so no lead is lost
+        const sub  = encodeURIComponent('Free Quote Request – ' + get('service_type'));
+        const body = encodeURIComponent(
+          'Name: ' + get('from_name') + '\nPhone: ' + get('phone') +
+          '\nEmail: ' + (get('email')||'—') + '\nService: ' + get('service_type') +
+          '\n\n' + (get('message')||'')
+        );
+        window.location.href = 'mailto:eric@moshauling.co?subject=' + sub + '&body=' + body;
+        btn.textContent = 'Send My Free Quote Request →'; btn.disabled = false;
+      }
+    }
+
+    // ── SMOOTH REVEAL ──
     // Smooth reveal on scroll
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
