@@ -26,7 +26,7 @@ nav{background:var(--dark);color:#fff;height:var(--nav);display:flex;align-items
 .nav-logo-text{display:flex;flex-direction:column;line-height:1}
 .nav-logo-text span:first-child{font-family:'Oswald',sans-serif;font-size:17px;font-weight:700;color:#fff;letter-spacing:.5px}
 .nav-logo-text span:last-child{font-size:10px;color:rgba(255,255,255,.55);letter-spacing:1px;text-transform:uppercase;margin-top:1px}
-.nb{background:none;border:none;color:rgba(255,255,255,.6);padding:8px 10px;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:.15s;font-family:'Inter',sans-serif;letter-spacing:.3px;text-transform:uppercase;min-width:52px}
+.nb{background:none;border:none;color:rgba(255,255,255,.6);padding:8px 8px;border-radius:4px;font-size:10px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:.15s;font-family:'Inter',sans-serif;letter-spacing:.3px;text-transform:uppercase;min-width:44px}
 .nb svg{width:20px;height:20px}
 .nb.active,.nb:hover{background:rgba(255,255,255,.12);color:#fff}
 .nb.active{border-bottom:2px solid var(--orange)}
@@ -75,6 +75,16 @@ nav{background:var(--dark);color:#fff;height:var(--nav);display:flex;align-items
 .b-completed{background:#f3f4f6;color:#9ca3af}
 .b-scheduled{background:#dcfce7;color:#15803d}
 .b-reserved{background:#dbeafe;color:#1d4ed8}
+.b-job{background:#ede9fe;color:#5b21b6}
+
+/* JOB CARDS */
+.jc{background:var(--surface);border-radius:6px;padding:16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);border-left:4px solid #7c3aed;cursor:pointer;transition:box-shadow .15s}
+.jc:active{box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.jc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.jc-name{font-family:'Oswald',sans-serif;font-size:16px;font-weight:600;letter-spacing:.2px}
+.jc-addr{font-size:13px;color:var(--muted);margin-top:2px}
+.jc-meta{display:flex;gap:12px;font-size:12px;color:var(--muted);margin-top:8px;flex-wrap:wrap}
+.jc-meta strong{color:var(--text)}
 .loc-pending{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#b45309;background:#fef3c7;border:1px solid #fcd34d;border-radius:3px;padding:2px 7px;margin-top:5px}
 
 /* BUTTONS */
@@ -303,6 +313,10 @@ code{background:#e5e7eb;padding:1px 5px;border-radius:3px;font-size:11.5px;font-
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
     Rentals
   </button>
+  <button class="nb" onclick="nav('jobs')" id="nb-jobs">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+    Jobs
+  </button>
   <button class="nb" onclick="nav('settings')" id="nb-settings">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     Settings
@@ -349,6 +363,26 @@ code{background:#e5e7eb;padding:1px 5px;border-radius:3px;font-size:11.5px;font-
   </div>
   <div id="rentals-summary" style="display:none;padding:12px 16px;background:#f0fdf4;border-bottom:1px solid #bbf7d0;font-size:13px;color:#15803d;font-weight:600"></div>
   <div class="scroll-view" id="rentals-list"></div>
+</div>
+
+<!-- JOBS -->
+<div class="view" id="view-jobs">
+  <div class="filter-bar">
+    <button class="fc active" onclick="setJobFilter('all')" id="jfc-all">All</button>
+    <button class="fc" onclick="setJobFilter('Junk Removal')" id="jfc-junk">Junk</button>
+    <button class="fc" onclick="setJobFilter('Dirt & Soil Removal')" id="jfc-dirt">Dirt/Soil</button>
+    <button class="fc" onclick="setJobFilter('Tree & Branch Removal')" id="jfc-tree">Tree</button>
+    <button class="fc" onclick="setJobFilter('Concrete Removal')" id="jfc-concrete">Concrete</button>
+    <button class="fc" onclick="setJobFilter('Fence Removal')" id="jfc-fence">Fence</button>
+    <button class="fc" onclick="setJobFilter('Shed Removal')" id="jfc-shed">Shed</button>
+    <button class="fc" onclick="setJobFilter('Hot Tub Removal')" id="jfc-hottub">Hot Tub</button>
+    <button class="fc" onclick="setJobFilter('Demolition')" id="jfc-demo">Demo</button>
+  </div>
+  <div style="padding:8px 16px;background:#1a1d22;border-top:1px solid rgba(255,255,255,.08);flex-shrink:0;display:flex;justify-content:space-between;align-items:center">
+    <div id="jobs-summary" style="font-size:13px;color:#a78bfa;font-weight:600"></div>
+    <button class="btn btn-primary btn-sm" onclick="openAddJob()">+ Add Job</button>
+  </div>
+  <div class="scroll-view" id="jobs-list"></div>
 </div>
 
 <!-- SETTINGS -->
@@ -438,6 +472,44 @@ code{background:#e5e7eb;padding:1px 5px;border-radius:3px;font-size:11.5px;font-
   </div>
 </div>
 
+<!-- JOB FORM MODAL -->
+<div class="backdrop" id="job-form-backdrop">
+  <div class="modal" id="job-form-modal">
+    <div class="modal-hdr">
+      <div class="modal-title">Add Job</div>
+      <button class="mclose" onclick="closeJobForm()">✕</button>
+    </div>
+    <div class="row2">
+      <div class="fg"><label>First Name *</label><input id="jf-first" type="text" placeholder="Jane" autocomplete="given-name"></div>
+      <div class="fg"><label>Last Name *</label><input id="jf-last" type="text" placeholder="Smith" autocomplete="family-name"></div>
+    </div>
+    <div class="fg"><label>Phone *</label><input id="jf-phone" type="tel" placeholder="(720) 555-0100" autocomplete="tel"></div>
+    <div class="fg"><label>Email</label><input id="jf-email" type="email" placeholder="jane@email.com" autocomplete="email"></div>
+    <div class="fg"><label>Job Address *</label><input id="jf-addr" type="text" placeholder="4321 Elm Ave, Denver, CO 80211" autocomplete="street-address"></div>
+    <div class="fg"><label>Job Type *</label>
+      <select id="jf-type">
+        <option value="">Select job type…</option>
+        <option>Junk Removal</option>
+        <option>Dirt &amp; Soil Removal</option>
+        <option>Tree &amp; Branch Removal</option>
+        <option>Concrete Removal</option>
+        <option>Fence Removal</option>
+        <option>Shed Removal</option>
+        <option>Hot Tub Removal</option>
+        <option>Demolition</option>
+      </select>
+    </div>
+    <div class="row2">
+      <div class="fg"><label>Amount ($)</label><input id="jf-amount" type="number" min="0" step="1" placeholder="0"></div>
+      <div class="fg"><label>Date Completed</label><input id="jf-date" type="date"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn btn-ghost" onclick="closeJobForm()">Cancel</button>
+      <button class="btn btn-primary" style="flex:1" onclick="saveJob()">Save Job</button>
+    </div>
+  </div>
+</div>
+
 <!-- DETAIL MODAL -->
 <div class="backdrop" id="sched-backdrop">
   <div class="modal" id="sched-modal">
@@ -471,6 +543,8 @@ code{background:#e5e7eb;padding:1px 5px;border-radius:3px;font-size:11.5px;font-
 const Store={
   rentals(){return JSON.parse(localStorage.getItem('mh_r')||'[]')},
   saveRentals(r){localStorage.setItem('mh_r',JSON.stringify(r))},
+  jobs(){return JSON.parse(localStorage.getItem('mh_j')||'[]')},
+  saveJobs(j){localStorage.setItem('mh_j',JSON.stringify(j))},
   settings(){
     return JSON.parse(localStorage.getItem('mh_s')||JSON.stringify({
       pk:'UArlcTXupXk48WJ10',sid:'service_nnqpehg',tid:'template_56np39x',
@@ -513,6 +587,7 @@ function nav(v){
   if(v==='dashboard'){setTimeout(()=>MAP.invalidateSize(),80);refreshMap();checkTodayDropoffs();}
   if(v==='rentals') renderList();
   if(v==='new-rental') initForm();
+  if(v==='jobs') renderJobs();
   if(v==='settings') loadSettingsUI();
 }
 
@@ -561,9 +636,12 @@ const ICONS={
   reserved:mkIcon('#2563eb'),
   scheduled:mkIcon('#15803d')
 };
+const JOB_ICON=mkIcon('#7c3aed');
 
 let markers=[];
 let showCompletedOnMap=false;
+let showJobsOnMap=false;
+function toggleJobsOnMap(){showJobsOnMap=!showJobsOnMap;refreshMap();}
 
 function toggleCompletedOnMap(){
   showCompletedOnMap=!showCompletedOnMap;
@@ -601,12 +679,32 @@ function refreshMap(){
         </div>`);
     markers.push(m);
   });
+  // Jobs on map
+  const jbs=Store.jobs();
+  let jcount=0;
+  jbs.forEach(j=>{
+    if(!j.service||!j.service.lat||!j.service.lng) return;
+    jcount++;
+    if(!showJobsOnMap) return;
+    const m=L.marker([j.service.lat,j.service.lng],{icon:JOB_ICON})
+      .addTo(MAP)
+      .bindPopup(`
+        <div style="min-width:220px;font-family:'Inter',sans-serif">
+          <div style="font-family:'Oswald',sans-serif;font-size:15px;font-weight:700;color:#1C1E22;margin-bottom:2px">${esc(j.firstName+' '+j.lastName)}</div>
+          <div style="font-size:12px;color:#5b21b6;font-weight:600;margin-bottom:6px">${esc(j.jobType)}</div>
+          <div style="font-size:13px;color:#6B7280;margin-bottom:6px">${esc(j.service.address)}</div>
+          <div style="font-size:12px;margin-bottom:10px"><b>Amount:</b> $${(j.amount||0).toLocaleString()}</div>
+          <button onclick="showJobDetail('${j.id}')" style="background:#7c3aed;color:#fff;border:none;padding:8px 14px;border-radius:4px;font-size:13px;cursor:pointer;width:100%;font-weight:600">View Details</button>
+        </div>`);
+    markers.push(m);
+  });
   const el=document.getElementById('map-stats');
   el.innerHTML=`<div class="stat-chip"><div class="dot dg"></div>${act} Active</div>`
     +(res?`<div class="stat-chip"><div class="dot" style="background:#2563eb"></div>${res} Reserved</div>`:'')
     +(ds?`<div class="stat-chip"><div class="dot dy"></div>${ds} Due Today</div>`:'')
     +(od?`<div class="stat-chip"><div class="dot dr"></div>${od} Overdue</div>`:'')
-    +(comp?`<div class="stat-chip" onclick="toggleCompletedOnMap()" style="cursor:pointer;opacity:${showCompletedOnMap?'1':'.55'};border:1.5px solid ${showCompletedOnMap?'#9ca3af':'transparent'}"><div class="dot" style="background:#9ca3af"></div>${comp} Past ${showCompletedOnMap?'(on)':'(off)'}</div>`:'');
+    +(comp?`<div class="stat-chip" onclick="toggleCompletedOnMap()" style="cursor:pointer;opacity:${showCompletedOnMap?'1':'.55'};border:1.5px solid ${showCompletedOnMap?'#9ca3af':'transparent'}"><div class="dot" style="background:#9ca3af"></div>${comp} Past ${showCompletedOnMap?'(on)':'(off)'}</div>`:'')
+    +(jcount?`<div class="stat-chip" onclick="toggleJobsOnMap()" style="cursor:pointer;opacity:${showJobsOnMap?'1':'.55'};border:1.5px solid ${showJobsOnMap?'#7c3aed':'transparent'}"><div class="dot" style="background:#7c3aed"></div>${jcount} Jobs ${showJobsOnMap?'(on)':'(off)'}</div>`:'');
 }
 
 async function geocode(addr){
@@ -1469,29 +1567,41 @@ function toast(msg,type=''){
 }
 
 // ── MANUAL PIN PLACEMENT ─────────────────────────────────────────
-let pinPlacementId=null,pinPlacementHandler=null;
+let pinPlacementId=null,pinPlacementType='rental',pinPlacementHandler=null;
 
-function startPinPlacement(id){
+function startPinPlacement(id,type='rental'){
   closeDetail();
   pinPlacementId=id;
-  const r=Store.rentals().find(r=>r.id===id);
+  pinPlacementType=type;
+  const isJob=type==='job';
+  const rec=isJob?Store.jobs().find(j=>j.id===id):Store.rentals().find(r=>r.id===id);
+  const name=rec?(isJob?rec.firstName+' '+rec.lastName:rec.customer.name):'this record';
   const banner=document.getElementById('pin-placement-banner');
   if(banner){
     banner.style.display='flex';
-    banner.querySelector('span').textContent=`📍 Tap the map to place pin for ${r?esc(r.customer.name):'this record'}`;
+    banner.querySelector('span').textContent=`📍 Tap the map to place pin for ${esc(name)}`;
   }
   nav('dashboard');
   MAP.getContainer().style.cursor='crosshair';
   pinPlacementHandler=function(e){
-    const rs=Store.rentals();
-    const rec=rs.find(r=>r.id===pinPlacementId);
-    if(rec){
-      rec.service.lat=e.latlng.lat;
-      rec.service.lng=e.latlng.lng;
-      rec.service.locationPending=false;
-      Store.saveRentals(rs);
-      refreshMap();
-      toast('Pin placed for '+rec.customer.name,'ok');
+    if(pinPlacementType==='job'){
+      const js=Store.jobs();
+      const job=js.find(j=>j.id===pinPlacementId);
+      if(job){
+        job.service.lat=e.latlng.lat;job.service.lng=e.latlng.lng;
+        job.service.locationPending=false;
+        Store.saveJobs(js);refreshMap();
+        toast('Pin placed for '+job.firstName+' '+job.lastName,'ok');
+      }
+    } else {
+      const rs=Store.rentals();
+      const rec=rs.find(r=>r.id===pinPlacementId);
+      if(rec){
+        rec.service.lat=e.latlng.lat;rec.service.lng=e.latlng.lng;
+        rec.service.locationPending=false;
+        Store.saveRentals(rs);refreshMap();
+        toast('Pin placed for '+rec.customer.name,'ok');
+      }
     }
     cancelPinPlacement();
   };
@@ -1523,6 +1633,163 @@ async function retryGeocode(id){
     closeDetail();
     toast('Location set for '+r.customer.name,'ok');
   }
+}
+// ─────────────────────────────────────────────────────────────────
+
+// ── JOBS ─────────────────────────────────────────────────────────
+const JOB_TYPES=['Junk Removal','Dirt & Soil Removal','Tree & Branch Removal','Concrete Removal','Fence Removal','Shed Removal','Hot Tub Removal','Demolition'];
+
+function fmtDateOnly(iso){if(!iso) return '';return new Date(iso+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
+
+let curJobFilter='all';
+
+function setJobFilter(f){
+  curJobFilter=f;
+  document.querySelectorAll('[id^="jfc-"]').forEach(b=>b.classList.remove('active'));
+  const key=f==='all'?'all':f==='Junk Removal'?'junk':f==='Dirt & Soil Removal'?'dirt':f==='Tree & Branch Removal'?'tree':f==='Concrete Removal'?'concrete':f==='Fence Removal'?'fence':f==='Shed Removal'?'shed':f==='Hot Tub Removal'?'hottub':'demo';
+  const btn=document.getElementById('jfc-'+key);
+  if(btn) btn.classList.add('active');
+  renderJobs();
+}
+
+function renderJobs(){
+  const el=document.getElementById('jobs-list');if(!el) return;
+  const sumEl=document.getElementById('jobs-summary');
+  let js=Store.jobs().sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+  if(curJobFilter!=='all') js=js.filter(j=>j.jobType===curJobFilter);
+  const total=js.reduce((s,j)=>s+(+j.amount||0),0);
+  if(sumEl){
+    sumEl.textContent=js.length?`${js.length} job${js.length!==1?'s':''} · $${total.toLocaleString()} total`:'';
+  }
+  if(!js.length){
+    el.innerHTML=`<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg><h3>No Jobs Found</h3><p>Tap <strong>+ Add Job</strong> to log your first junk removal job.</p></div>`;
+    return;
+  }
+  el.innerHTML=js.map(j=>`
+    <div class="jc" onclick="showJobDetail('${j.id}')">
+      <div class="jc-top">
+        <div>
+          <div class="jc-name">${esc(j.firstName+' '+j.lastName)}</div>
+          <div class="jc-addr">${esc(j.service.address)}</div>
+          ${(!j.service.lat&&!j.service.lng)?'<div class="loc-pending">📍 Location To Be Set</div>':''}
+        </div>
+        <span class="badge b-job">${esc(j.jobType)}</span>
+      </div>
+      <div class="jc-meta">
+        <span>$${(+j.amount||0).toLocaleString()}</span>
+        ${j.dateCompleted?`<span>${fmtDateOnly(j.dateCompleted)}</span>`:''}
+        ${j.phone?`<span>${esc(j.phone)}</span>`:''}
+      </div>
+    </div>`).join('');
+}
+
+function openAddJob(){
+  document.getElementById('jf-first').value='';
+  document.getElementById('jf-last').value='';
+  document.getElementById('jf-phone').value='';
+  document.getElementById('jf-email').value='';
+  document.getElementById('jf-addr').value='';
+  document.getElementById('jf-type').value='';
+  document.getElementById('jf-amount').value='';
+  document.getElementById('jf-date').value='';
+  document.getElementById('job-form-backdrop').classList.add('open');
+  setTimeout(()=>document.getElementById('jf-first').focus(),100);
+}
+
+function closeJobForm(){document.getElementById('job-form-backdrop').classList.remove('open');}
+document.getElementById('job-form-backdrop').addEventListener('click',function(e){if(e.target===this) closeJobForm();});
+
+async function saveJob(){
+  const first=document.getElementById('jf-first').value.trim();
+  const last=document.getElementById('jf-last').value.trim();
+  const phone=document.getElementById('jf-phone').value.trim();
+  const email=document.getElementById('jf-email').value.trim();
+  const addr=document.getElementById('jf-addr').value.trim();
+  const jobType=document.getElementById('jf-type').value;
+  const amount=document.getElementById('jf-amount').value;
+  const dateCompleted=document.getElementById('jf-date').value;
+  if(!first||!last){toast('First and last name required','err');return;}
+  if(!phone){toast('Phone number required','err');return;}
+  if(!addr){toast('Address required','err');return;}
+  if(!jobType){toast('Please select a job type','err');return;}
+  const btn=document.querySelector('#job-form-modal .btn-primary');
+  if(btn){btn.textContent='Saving…';btn.disabled=true;}
+  toast('Looking up address…');
+  const geo=await geocode(addr);
+  const job={
+    id:uid(),firstName:first,lastName:last,phone,email,
+    service:{address:addr,lat:geo?geo.lat:null,lng:geo?geo.lng:null,locationPending:!geo},
+    jobType,amount:parseFloat(amount)||0,dateCompleted,
+    createdAt:new Date().toISOString()
+  };
+  const js=Store.jobs();js.push(job);Store.saveJobs(js);
+  closeJobForm();
+  if(btn){btn.textContent='Save Job';btn.disabled=false;}
+  if(!geo) toast('Address not found — pin it manually from the Jobs list','err');
+  else toast(first+' '+last+' saved','ok');
+  renderJobs();refreshMap();
+}
+
+function showJobDetail(id){
+  const j=Store.jobs().find(j=>j.id===id);if(!j) return;
+  document.getElementById('detail-modal').innerHTML=`
+    <div class="modal-hdr">
+      <div class="modal-title">${esc(j.firstName+' '+j.lastName)}</div>
+      <button class="mclose" onclick="closeDetail()">✕</button>
+    </div>
+    <span class="badge b-job">${esc(j.jobType)}</span>
+    <div class="d-section" style="margin-top:14px">
+      <h4>Customer</h4>
+      <div class="d-row"><span class="d-key">Name</span><span class="d-val">${esc(j.firstName+' '+j.lastName)}</span></div>
+      <div class="d-row"><span class="d-key">Phone</span><span class="d-val">${esc(j.phone)}</span></div>
+      ${j.email?`<div class="d-row"><span class="d-key">Email</span><span class="d-val">${esc(j.email)}</span></div>`:''}
+    </div>
+    <div class="d-section">
+      <h4>Job Details</h4>
+      <div class="d-row"><span class="d-key">Type</span><span class="d-val">${esc(j.jobType)}</span></div>
+      <div class="d-row"><span class="d-key">Address</span><span class="d-val">${esc(j.service.address)}</span></div>
+      <div class="d-row"><span class="d-key">Amount</span><span class="d-val" style="font-weight:700;color:#5b21b6">$${(+j.amount||0).toLocaleString()}</span></div>
+      ${j.dateCompleted?`<div class="d-row"><span class="d-key">Date Completed</span><span class="d-val">${fmtDateOnly(j.dateCompleted)}</span></div>`:''}
+      <div class="d-row"><span class="d-key">Logged</span><span class="d-val">${fmtD(j.createdAt)}</span></div>
+    </div>
+    ${(!j.service.lat&&!j.service.lng)?`
+    <div class="d-section" style="background:#fef9ec;border:1.5px solid #fcd34d;border-radius:6px;padding:12px 14px">
+      <h4 style="color:#b45309;margin-bottom:10px">📍 Location To Be Set</h4>
+      <div style="font-size:13px;color:#92400e;margin-bottom:12px">No map pin. Re-try the address or place a pin manually.</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <input id="retry-job-addr-${id}" type="text" value="${esc(j.service.address)}" style="flex:1;padding:8px 10px;border:1.5px solid #fcd34d;border-radius:4px;font-size:13px;background:#fff">
+        <button class="btn btn-sm" style="background:#b45309;color:#fff;white-space:nowrap" onclick="retryJobGeocode('${id}')">Try Again</button>
+      </div>
+      <button class="btn btn-sm btn-outline" style="width:100%" onclick="startPinPlacement('${id}','job')">Place Pin Manually on Map →</button>
+    </div>`:''}
+    <div style="display:flex;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+      <button class="btn btn-danger btn-sm" onclick="deleteJob('${id}')">Delete Job</button>
+    </div>`;
+  document.getElementById('detail-backdrop').classList.add('open');
+}
+
+async function retryJobGeocode(id){
+  const input=document.getElementById('retry-job-addr-'+id);
+  const addr=input?input.value.trim():'';
+  if(!addr) return;
+  toast('Looking up address…');
+  const geo=await geocode(addr);
+  if(!geo){toast('Still not found — try placing manually','err');return;}
+  const js=Store.jobs();
+  const j=js.find(j=>j.id===id);
+  if(j){
+    j.service.lat=geo.lat;j.service.lng=geo.lng;
+    j.service.address=addr;j.service.locationPending=false;
+    Store.saveJobs(js);refreshMap();renderJobs();closeDetail();
+    toast('Location set for '+j.firstName+' '+j.lastName,'ok');
+  }
+}
+
+function deleteJob(id){
+  if(!confirm('Delete this job record? This cannot be undone.')) return;
+  Store.saveJobs(Store.jobs().filter(j=>j.id!==id));
+  closeDetail();renderJobs();refreshMap();
+  toast('Job deleted','ok');
 }
 // ─────────────────────────────────────────────────────────────────
 
@@ -1702,11 +1969,58 @@ Store.saveRentals=function(rs){
   _baseSave(rs);
   if(fbDb) pushToCloud(rs);
 };
+
+async function pushJobsToCloud(jobs){
+  if(!fbDb) return;
+  try{
+    const col=fbDb.collection('jobs');
+    const snap=await col.get();
+    const batch=fbDb.batch();
+    const ids=new Set(jobs.map(j=>j.id));
+    snap.docs.forEach(d=>{if(!ids.has(d.id)) batch.delete(d.ref);});
+    jobs.forEach(j=>batch.set(col.doc(j.id),j));
+    await batch.commit();
+  }catch(e){console.error('[MH] Job cloud push failed:',e);}
+}
+
+let jobsUnsubscribe=null;
+function watchJobsCloud(){
+  if(!fbDb) return;
+  if(jobsUnsubscribe) jobsUnsubscribe();
+  let isFirst=true;
+  jobsUnsubscribe=fbDb.collection('jobs').onSnapshot(snap=>{
+    const cloudJobs=snap.docs.map(d=>d.data());
+    const localJobs=Store.jobs();
+    if(isFirst){
+      isFirst=false;
+      const merged=Object.values(
+        [...localJobs,...cloudJobs].reduce((acc,j)=>{if(j&&j.id) acc[j.id]=j;return acc},{})
+      );
+      const localOnly=localJobs.filter(j=>j&&j.id&&!cloudJobs.find(c=>c.id===j.id));
+      localStorage.setItem('mh_j',JSON.stringify(merged));
+      if(localOnly.length>0) pushJobsToCloud(merged);
+    } else {
+      const merged=Object.values(
+        [...localJobs,...cloudJobs].reduce((acc,j)=>{if(j&&j.id) acc[j.id]=j;return acc},{})
+      );
+      localStorage.setItem('mh_j',JSON.stringify(merged));
+    }
+    refreshMap();
+    if(document.getElementById('view-jobs').classList.contains('active')) renderJobs();
+  },err=>{console.error('[MH] Jobs cloud watch error:',err);});
+}
+
+// Patch Store.saveJobs to also push to cloud
+const _baseSaveJobs=Store.saveJobs.bind(Store);
+Store.saveJobs=function(js){
+  _baseSaveJobs(js);
+  if(fbDb) pushJobsToCloud(js);
+};
 // ─────────────────────────────────────────────────────────────────
 
 refreshMap();
 checkTodayDropoffs();
-initFirebase().then(ok=>{if(ok) watchCloud();});
+initFirebase().then(ok=>{if(ok){watchCloud();watchJobsCloud();}});
 </script>
 </body>
 </html>
