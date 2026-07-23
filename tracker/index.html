@@ -483,7 +483,7 @@ code{background:#e5e7eb;padding:1px 5px;border-radius:3px;font-size:11.5px;font-
       <div class="fg"><label>First Name *</label><input id="jf-first" type="text" placeholder="Jane" autocomplete="given-name"></div>
       <div class="fg"><label>Last Name *</label><input id="jf-last" type="text" placeholder="Smith" autocomplete="family-name"></div>
     </div>
-    <div class="fg"><label>Phone *</label><input id="jf-phone" type="tel" placeholder="(720) 555-0100" autocomplete="tel"></div>
+    <div class="fg"><label>Phone</label><input id="jf-phone" type="tel" placeholder="(720) 555-0100" autocomplete="tel"></div>
     <div class="fg"><label>Email</label><input id="jf-email" type="email" placeholder="jane@email.com" autocomplete="email"></div>
     <div class="fg"><label>Job Address *</label><input id="jf-addr" type="text" placeholder="4321 Elm Ave, Denver, CO 80211" autocomplete="street-address"></div>
     <div class="fg"><label>Job Type *</label>
@@ -1709,7 +1709,6 @@ async function saveJob(){
   const amount=document.getElementById('jf-amount').value;
   const dateCompleted=document.getElementById('jf-date').value;
   if(!first||!last){toast('First and last name required','err');return;}
-  if(!phone){toast('Phone number required','err');return;}
   if(!addr){toast('Address required','err');return;}
   if(!jobType){toast('Please select a job type','err');return;}
   const btn=document.querySelector('#job-form-modal .btn-primary');
