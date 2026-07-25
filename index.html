@@ -12,6 +12,7 @@
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
     gtag('config', 'G-6NQ1R26L3F');
+    gtag('config', 'AW-16676073753');
   </script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -1415,7 +1416,10 @@
           reply_to:     get('email') || 'noreply@moshauling.co',
           photos_html:  photosHtml
         });
-        if (typeof gtag !== 'undefined') gtag('event', 'quote_form_submit', { service_type: get('service_type') });
+        if (typeof gtag !== 'undefined') {
+          gtag('event', 'quote_form_submit', { service_type: get('service_type') });
+          gtag('event', 'conversion', { send_to: 'AW-16676073753/OjBFCJr6grwcEJni4o8-' });
+        }
         document.getElementById('qm-form-wrap').style.display = 'none';
         document.getElementById('qm-success').style.display = '';
       } catch(err) {
