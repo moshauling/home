@@ -265,8 +265,12 @@
           <script>
             window.addEventListener('message', function(e) {
               if (e.data.event && e.data.event === 'calendly.event_scheduled') {
+                // Push to dataLayer so GTM can see the event in Tag Assistant
+                window.dataLayer = window.dataLayer || [];
+                window.dataLayer.push({ event: 'calendly_booking_completed' });
+                // Fire Google Ads conversion directly via gtag
                 if (typeof gtag !== 'undefined') {
-                  gtag('event', 'conversion', { send_to: 'AW-16676073753/OjBFCJr6grwcEJni4o8-' });
+                  gtag('event', 'conversion', { send_to: 'AW-16676073753/_pZHCIXG0tYcEJni4o8-' });
                 }
               }
             });

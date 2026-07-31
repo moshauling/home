@@ -208,6 +208,28 @@ code{background:#e5e7eb;padding:1px 5px;border-radius:3px;font-size:11.5px;font-
 
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:4px}
+
+@media print{
+  nav,.view,#agr-view-toolbar,#login-gate,.backdrop,#agr-view-overlay>div:first-child{display:none!important}
+  #agr-view-overlay{position:static!important;overflow:visible!important}
+  #agr-view-body{padding:0!important;max-width:100%!important}
+  body{overflow:auto!important}
+}
+
+/* REVENUE TAB */
+.rev-fc{padding:6px 14px;border-radius:3px;border:1.5px solid rgba(255,255,255,.2);background:transparent;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:.15s;font-family:'Oswald',sans-serif;letter-spacing:.4px;text-transform:uppercase;color:rgba(255,255,255,.6)}
+.rev-fc.active{border-color:var(--orange);background:var(--orange);color:#fff}
+.rev-date-row{padding:10px 16px;background:#1a1d22;display:flex;gap:8px;align-items:center;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.06)}
+.rev-date-row input[type=date]{background:#2A2D33;border:1.5px solid rgba(255,255,255,.15);color:#fff;border-radius:4px;padding:7px 10px;font-size:13px;font-family:'Inter',sans-serif;flex:1;min-width:0;-webkit-appearance:none;color-scheme:dark}
+.rev-date-row input[type=date]:focus{outline:none;border-color:var(--orange)}
+.rev-date-row span{color:rgba(255,255,255,.4);font-size:13px;flex-shrink:0}
+.rev-date-row button{background:var(--orange);border:none;color:#fff;padding:7px 14px;border-radius:4px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;flex-shrink:0}
+.rev-kpi-strip{display:flex;gap:10px;margin-bottom:16px}
+.rev-kpi{flex:1;background:#fff;border-radius:6px;padding:12px 8px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.08);min-width:0}
+.rev-kpi-val{font-family:'Oswald',sans-serif;font-size:20px;font-weight:700;color:var(--dark);line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rev-kpi-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:4px;font-weight:600}
+.rev-card{background:#fff;border-radius:6px;padding:18px 16px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:14px}
+.rev-card-title{font-family:'Oswald',sans-serif;font-size:15px;font-weight:600;color:var(--dark);letter-spacing:.3px;margin-bottom:14px}
 </style>
 </head>
 <body>
@@ -317,6 +339,10 @@ code{background:#e5e7eb;padding:1px 5px;border-radius:3px;font-size:11.5px;font-
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
     Jobs
   </button>
+  <button class="nb" onclick="nav('revenue')" id="nb-revenue">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    Revenue
+  </button>
   <button class="nb" onclick="nav('settings')" id="nb-settings">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     Settings
@@ -383,6 +409,23 @@ code{background:#e5e7eb;padding:1px 5px;border-radius:3px;font-size:11.5px;font-
     <button class="btn btn-primary btn-sm" onclick="openAddJob()">+ Add Job</button>
   </div>
   <div class="scroll-view" id="jobs-list"></div>
+</div>
+
+<!-- REVENUE -->
+<div class="view" id="view-revenue">
+  <div class="filter-bar" style="gap:6px">
+    <button class="rev-fc active" id="rev-fc-month" onclick="setRevPreset('month')">This Month</button>
+    <button class="rev-fc" id="rev-fc-lastmonth" onclick="setRevPreset('lastmonth')">Last Month</button>
+    <button class="rev-fc" id="rev-fc-q" onclick="setRevPreset('q')">90 Days</button>
+    <button class="rev-fc" id="rev-fc-year" onclick="setRevPreset('year')">This Year</button>
+    <button class="rev-fc" id="rev-fc-all" onclick="setRevPreset('all')">All Time</button>
+  </div>
+  <div class="rev-date-row">
+    <input type="date" id="rev-date-from" onchange="applyCustomRevDates()">
+    <span>to</span>
+    <input type="date" id="rev-date-to" onchange="applyCustomRevDates()">
+  </div>
+  <div class="scroll-view" id="rev-content"></div>
 </div>
 
 <!-- SETTINGS -->
@@ -588,6 +631,7 @@ function nav(v){
   if(v==='rentals') renderList();
   if(v==='new-rental') initForm();
   if(v==='jobs') renderJobs();
+  if(v==='revenue') setRevPreset(revPreset||'month');
   if(v==='settings') loadSettingsUI();
 }
 
@@ -1358,12 +1402,19 @@ function showDetail(id){
       <button class="btn btn-sm btn-outline" style="width:100%" onclick="startPinPlacement('${id}')">Place Pin Manually on Map →</button>
     </div>`:''}
 
-    ${r.agreement?`
     <div class="d-section">
-      <h4>Signed Agreement</h4>
-      <div style="font-size:13px;color:var(--muted);margin-bottom:8px">Signed: ${fmtD(r.agreement.signedAt)}</div>
-      <img class="sig-img" src="${r.agreement.sigDataUrl}" alt="Renter Signature">
+      <h4>Agreement</h4>
+      ${r.agreement&&r.agreement.sigDataUrl?`
+        <div style="font-size:13px;color:var(--muted);margin-bottom:8px">Signed ${fmtD(r.agreement.signedAt)}</div>
+        <img class="sig-img" src="${r.agreement.sigDataUrl}" alt="Renter Signature" style="margin-bottom:10px">
+      `:s==='reserved'||s==='scheduled'?`
+        <div style="font-size:13px;color:var(--muted);margin-bottom:8px">Not yet signed</div>
+      `:`
+        <div style="font-size:13px;color:var(--muted);margin-bottom:8px">Signature on file via email</div>
+      `}
+      <button class="btn btn-dark btn-sm" style="width:100%" onclick="viewAgreement('${id}')">📄 View / Print Agreement</button>
     </div>
+    ${s!=='scheduled'&&s!=='reserved'?`
     <div class="d-section">
       <h4>Calendar</h4>
       <div style="display:flex;flex-direction:column;gap:8px">
@@ -2017,9 +2068,282 @@ Store.saveJobs=function(js){
 };
 // ─────────────────────────────────────────────────────────────────
 
+// ─── AGREEMENT VIEW ──────────────────────────────────────────────
+function viewAgreement(id){
+  const r=Store.rentals().find(r=>r.id===id);
+  if(!r) return;
+  // Map rental record → draft shape expected by agreementHTML()
+  const d={
+    id:r.id,
+    name:r.customer.name,
+    email:r.customer.email,
+    phone:r.customer.phone,
+    renterAddress:r.customer.renterAddress||'',
+    renterCity:r.customer.renterCity||'',
+    renterState:r.customer.renterState||'',
+    renterZip:r.customer.renterZip||'',
+    address:r.service.address,
+    dropoffDate:r.service.dropoffDate,
+    pickupDate:r.service.pickupDate,
+    rentalDays:r.service.rentalDays,
+    customPickupDate:r.service.customPickupDate||'',
+    price:r.service.price,
+    signedAt:r.agreement?r.agreement.signedAt:r.createdAt
+  };
+  let html=agreementHTML(d);
+  if(r.agreement&&r.agreement.sigDataUrl){
+    html+=`<div style="margin-top:24px;padding-top:16px;border-top:2px solid #e5e7eb">
+      <div style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Renter Signature</div>
+      <img src="${r.agreement.sigDataUrl}" style="border:1px solid #e5e7eb;border-radius:4px;max-width:320px;display:block;margin-bottom:8px">
+      <div style="font-size:12px;color:#6B7280">Signed: ${fmtD(r.agreement.signedAt)}</div>
+      <div style="font-size:12px;color:#6B7280;margin-top:2px">Agreement ID: ${r.id}</div>
+    </div>`;
+  } else {
+    html+=`<div style="margin-top:20px;padding:12px 14px;background:#fef3c7;border-radius:4px;border-left:3px solid #d97706;font-size:13px;color:#92400e">
+      ⚠️ Digital signature not stored for this record. Original signed agreement was sent via email at time of booking.
+    </div>`;
+  }
+  document.getElementById('agr-view-body').innerHTML=html;
+  document.getElementById('agr-view-overlay').style.display='block';
+  document.body.style.overflow='hidden';
+  closeDetail();
+}
+function closeAgrView(){
+  document.getElementById('agr-view-overlay').style.display='none';
+  document.body.style.overflow='';
+}
+// ─────────────────────────────────────────────────────────────────
+
+// ─── REVENUE TAB ─────────────────────────────────────────────────
+const CAT_COLORS={
+  'Dumpster Rental':'#D4900A',
+  'Junk Removal':'#2563eb',
+  'Dirt & Soil Removal':'#92400e',
+  'Tree & Branch Removal':'#15803d',
+  'Concrete Removal':'#6b7280',
+  'Fence Removal':'#7c3aed',
+  'Shed Removal':'#b45309',
+  'Hot Tub Removal':'#0e7490',
+  'Demolition':'#b91c1c'
+};
+
+let revPreset='month';
+let revFrom=null,revTo=null;
+
+function setRevPreset(p){
+  revPreset=p;
+  document.querySelectorAll('.rev-fc').forEach(b=>b.classList.remove('active'));
+  const btn=document.getElementById('rev-fc-'+p);
+  if(btn) btn.classList.add('active');
+  const now=new Date();
+  const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  if(p==='month'){
+    revFrom=new Date(now.getFullYear(),now.getMonth(),1);
+    revTo=new Date(now.getFullYear(),now.getMonth()+1,0,23,59,59,999);
+  } else if(p==='lastmonth'){
+    revFrom=new Date(now.getFullYear(),now.getMonth()-1,1);
+    revTo=new Date(now.getFullYear(),now.getMonth(),0,23,59,59,999);
+  } else if(p==='q'){
+    revFrom=new Date(today); revFrom.setDate(today.getDate()-89);
+    revTo=new Date(today); revTo.setHours(23,59,59,999);
+  } else if(p==='year'){
+    revFrom=new Date(now.getFullYear(),0,1);
+    revTo=new Date(now.getFullYear(),11,31,23,59,59,999);
+  } else if(p==='all'){
+    revFrom=null; revTo=null;
+  }
+  document.getElementById('rev-date-from').value=revFrom?revFrom.toISOString().slice(0,10):'';
+  document.getElementById('rev-date-to').value=revTo?revTo.toISOString().slice(0,10):'';
+  renderRevenue();
+}
+
+function applyCustomRevDates(){
+  const f=document.getElementById('rev-date-from').value;
+  const t=document.getElementById('rev-date-to').value;
+  document.querySelectorAll('.rev-fc').forEach(b=>b.classList.remove('active'));
+  revPreset='custom';
+  revFrom=f?new Date(f+'T00:00:00'):null;
+  revTo=t?new Date(t+'T23:59:59'):null;
+  renderRevenue();
+}
+
+function revInRange(dateStr){
+  if(!dateStr) return false;
+  const d=dateStr.length===10?new Date(dateStr+'T12:00:00'):new Date(dateStr);
+  if(revFrom && d<revFrom) return false;
+  if(revTo && d>revTo) return false;
+  return true;
+}
+
+function getRevData(){
+  const jobs=Store.jobs().filter(j=>j.dateCompleted && revInRange(j.dateCompleted));
+  const rentals=Store.rentals().filter(r=>r.status==='completed' && r.completedAt && revInRange(r.completedAt));
+
+  const byType={};
+  rentals.forEach(r=>{
+    const amt=+(r.service&&r.service.price)||0;
+    if(!byType['Dumpster Rental']) byType['Dumpster Rental']={amount:0,count:0,color:CAT_COLORS['Dumpster Rental']};
+    byType['Dumpster Rental'].amount+=amt;
+    byType['Dumpster Rental'].count++;
+  });
+  jobs.forEach(j=>{
+    const cat=j.jobType||'Other';
+    if(!byType[cat]) byType[cat]={amount:0,count:0,color:CAT_COLORS[cat]||'#6b7280'};
+    byType[cat].amount+=+(j.amount)||0;
+    byType[cat].count++;
+  });
+
+  const sorted=Object.entries(byType)
+    .map(([label,v])=>({label,...v}))
+    .sort((a,b)=>b.amount-a.amount);
+  const total=sorted.reduce((s,c)=>s+c.amount,0);
+  const count=rentals.length+jobs.length;
+
+  const monthMap={};
+  [...rentals.map(r=>({date:r.completedAt,amt:+(r.service&&r.service.price)||0})),
+   ...jobs.map(j=>({date:j.dateCompleted+'T12:00:00',amt:+(j.amount)||0}))
+  ].forEach(({date,amt})=>{
+    const d=new Date(date);
+    const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    monthMap[key]=(monthMap[key]||0)+amt;
+  });
+
+  return {sorted,total,count,monthMap};
+}
+
+function drawMonthChart(monthMap){
+  const MNAMES=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const months=[];
+  let start,end;
+  const now=new Date();
+  if(revFrom&&revTo){
+    start=new Date(revFrom.getFullYear(),revFrom.getMonth(),1);
+    end=new Date(revTo.getFullYear(),revTo.getMonth(),1);
+  } else {
+    end=new Date(now.getFullYear(),now.getMonth(),1);
+    start=new Date(now.getFullYear(),now.getMonth()-11,1);
+  }
+  const cur=new Date(start);
+  while(cur<=end){
+    const key=`${cur.getFullYear()}-${String(cur.getMonth()+1).padStart(2,'0')}`;
+    months.push({key,label:MNAMES[cur.getMonth()],yr:cur.getFullYear(),amount:monthMap[key]||0});
+    cur.setMonth(cur.getMonth()+1);
+  }
+  if(months.length>12) months.splice(0,months.length-12);
+  if(!months.length) return '';
+
+  const max=Math.max(...months.map(m=>m.amount),1);
+  const n=months.length;
+  const W=360,CHART_H=90,PAD_TOP=20,LABEL_H=14;
+  const H=PAD_TOP+CHART_H+LABEL_H+4;
+  const slotW=W/n;
+  const barW=Math.max(6,slotW-Math.max(3,slotW*0.2));
+
+  let svg=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block">`;
+  // Horizontal guide lines
+  [0.25,0.5,0.75,1].forEach(f=>{
+    const y=(PAD_TOP+CHART_H*(1-f)).toFixed(1);
+    svg+=`<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="#f3f4f6" stroke-width="1"/>`;
+  });
+  months.forEach((m,i)=>{
+    const cx=i*slotW+slotW/2;
+    const x=(cx-barW/2).toFixed(1);
+    const bH=Math.max(m.amount>0?3:0,(m.amount/max)*CHART_H);
+    const y=(PAD_TOP+CHART_H-bH).toFixed(1);
+    // bar
+    svg+=`<rect x="${x}" y="${y}" width="${barW.toFixed(1)}" height="${bH.toFixed(1)}" fill="#D4900A" rx="2"/>`;
+    // month label
+    const showYr=n>6&&(i===0||m.yr!==months[i-1].yr);
+    const yrSuffix=showYr?(' “'+String(m.yr).slice(2)):'';
+    svg+=`<text x="${cx.toFixed(1)}" y="${(PAD_TOP+CHART_H+12).toFixed(1)}" text-anchor="middle" font-size="9" fill="#9ca3af" font-family="Inter,sans-serif">${m.label}${yrSuffix}</text>`;
+    // value above bar
+    if(m.amount>0&&bH>14){
+      const val=m.amount>=1000?'$'+(m.amount/1000).toFixed(1)+'k':'$'+m.amount;
+      svg+=`<text x="${cx.toFixed(1)}" y="${(parseFloat(y)-4).toFixed(1)}" text-anchor="middle" font-size="8" fill="#D4900A" font-family="Inter,sans-serif" font-weight="600">${val}</text>`;
+    }
+  });
+  svg+='</svg>';
+  return svg;
+}
+
+function drawTypeBreakdown(sorted,total){
+  if(!sorted.length) return '';
+  return sorted.map(cat=>{
+    const pct=total>0?(cat.amount/total*100):0;
+    return `<div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:10px;height:10px;border-radius:2px;background:${cat.color};flex-shrink:0"></div>
+          <span style="font-size:13px;font-weight:600;color:var(--text)">${esc(cat.label)}</span>
+          <span style="font-size:11px;color:var(--muted)">&times;${cat.count}</span>
+        </div>
+        <span style="font-size:15px;font-weight:700;color:${cat.color};font-family:'Oswald',sans-serif">$${cat.amount.toLocaleString()}</span>
+      </div>
+      <div style="background:#f3f4f6;border-radius:3px;height:8px;overflow:hidden">
+        <div style="width:${pct.toFixed(1)}%;background:${cat.color};height:100%;border-radius:3px"></div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:3px">${pct.toFixed(0)}% of total</div>
+    </div>`;
+  }).join('');
+}
+
+function renderRevenue(){
+  const {sorted,total,count,monthMap}=getRevData();
+  const avg=count>0?Math.round(total/count):0;
+  const hasData=sorted.length>0;
+  const container=document.getElementById('rev-content');
+  if(!container) return;
+
+  const kpi=`<div class="rev-kpi-strip">
+    <div class="rev-kpi">
+      <div class="rev-kpi-val" style="color:var(--orange)">$${total.toLocaleString()}</div>
+      <div class="rev-kpi-lbl">Revenue</div>
+    </div>
+    <div class="rev-kpi">
+      <div class="rev-kpi-val">${count}</div>
+      <div class="rev-kpi-lbl">Jobs</div>
+    </div>
+    <div class="rev-kpi">
+      <div class="rev-kpi-val">$${avg.toLocaleString()}</div>
+      <div class="rev-kpi-lbl">Avg / Job</div>
+    </div>
+  </div>`;
+
+  const chartSvg=drawMonthChart(monthMap);
+  const chart=chartSvg?`<div class="rev-card">
+    <div class="rev-card-title">Monthly Revenue</div>
+    ${chartSvg}
+  </div>`:'';
+
+  const breakdown=hasData?`<div class="rev-card">
+    <div class="rev-card-title">Revenue by Type</div>
+    ${drawTypeBreakdown(sorted,total)}
+  </div>`:'';
+
+  const empty=!hasData?`<div class="empty">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    <h3>No Revenue in Range</h3>
+    <p>Complete jobs and mark rentals done to see revenue here.</p>
+  </div>`:'';
+
+  container.innerHTML=kpi+chart+breakdown+empty;
+}
+// ─────────────────────────────────────────────────────────────────
+
 refreshMap();
 checkTodayDropoffs();
 initFirebase().then(ok=>{if(ok){watchCloud();watchJobsCloud();}});
 </script>
+<!-- AGREEMENT VIEW OVERLAY -->
+<div id="agr-view-overlay" style="display:none;position:fixed;inset:0;background:#fff;z-index:5000;overflow-y:auto;-webkit-overflow-scrolling:touch">
+  <div id="agr-view-toolbar" style="background:var(--dark);color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1;gap:10px">
+    <div style="font-family:'Oswald',sans-serif;font-size:15px;font-weight:600;letter-spacing:.3px">Rental Agreement</div>
+    <div style="display:flex;gap:8px;flex-shrink:0">
+      <button onclick="window.print()" style="background:var(--orange);border:none;color:#fff;padding:8px 16px;border-radius:4px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">🖨 Print / Save PDF</button>
+      <button onclick="closeAgrView()" style="background:rgba(255,255,255,.15);border:none;color:#fff;padding:8px 14px;border-radius:4px;font-size:13px;cursor:pointer">✕</button>
+    </div>
+  </div>
+  <div id="agr-view-body" style="padding:20px 16px;max-width:700px;margin:0 auto"></div>
+</div>
 </body>
 </html>
