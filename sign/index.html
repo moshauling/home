@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Sign Your Rental Agreement | Mo's Hauling</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#f3f4f6;color:#1f2937;min-height:100vh}
+.top-bar{background:#1C1E22;padding:14px 16px;display:flex;align-items:center;gap:12px}
+.top-bar img{height:36px;width:36px;object-fit:contain;border-radius:4px}
+.top-bar-text{color:#fff}
+.top-bar-name{font-size:16px;font-weight:700;letter-spacing:.5px}
+.top-bar-sub{font-size:11px;color:rgba(255,255,255,.5);margin-top:1px}
+.container{max-width:680px;margin:0 auto;padding:16px}
+.card{background:#fff;border-radius:8px;padding:20px 16px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#6b7280;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #1C1E22}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:0}
+td{padding:6px 8px;border:1px solid #e5e7eb;vertical-align:top}
+td:first-child{color:#6b7280;font-weight:600;background:#f9fafb;width:40%}
+.term-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#1C1E22;margin:14px 0 4px}
+.term-body{font-size:12.5px;line-height:1.65;color:#374151;margin-bottom:4px}
+.term-body ul{padding-left:18px;margin-top:4px}
+.sig-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#6b7280;margin-bottom:8px}
+.sig-wrap{border:1.5px solid #d1d5db;border-radius:6px;background:#fff;position:relative;margin-bottom:10px;overflow:hidden}
+.sig-wrap canvas{display:block;width:100%;touch-action:none}
+.sig-hint{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#d1d5db;font-size:14px;pointer-events:none;user-select:none;font-style:italic;text-align:center}
+.btn{padding:13px 18px;border-radius:6px;border:none;font-size:15px;font-weight:600;cursor:pointer;width:100%;transition:.15s;font-family:inherit}
+.btn-primary{background:#D4900A;color:#fff}
+.btn-primary:active{background:#b57a08}
+.btn-ghost{background:#f3f4f6;color:#374151;margin-top:10px}
+.state{display:none;min-height:60vh;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:40px 24px}
+.state.active{display:flex}
+.state-icon{width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:18px}
+.state h2{font-size:20px;font-weight:700;color:#1C1E22;margin-bottom:8px}
+.state p{font-size:14px;color:#6b7280;line-height:1.6;max-width:300px}
+.spinner{width:36px;height:36px;border:3px solid #e5e7eb;border-top-color:#D4900A;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.price-row td:last-child{font-size:16px;font-weight:700;color:#D4900A}
+.notice{background:#fff9ed;border:1.5px solid #fcd34d;border-radius:6px;padding:13px;font-size:13px;color:#92400e;line-height:1.55;margin-bottom:14px}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <img src="../logo.png" alt="Mo's Hauling" onerror="this.style.display='none'">
+  <div class="top-bar-text">
+    <div class="top-bar-name">MO'S HAULING, LLC</div>
+    <div class="top-bar-sub">Rental Agreement · Digital Signing</div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div class="state active" id="state-loading">
+  <div class="spinner"></div>
+  <p style="margin-top:16px;color:#6b7280">Loading your agreement…</p>
+</div>
+
+<!-- ERROR -->
+<div class="state" id="state-error">
+  <div class="state-icon" style="background:#fee2e2">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#b91c1c" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+  </div>
+  <h2>Agreement Not Found</h2>
+  <p id="error-msg">This link may be invalid or expired. Please contact Mo's Hauling.</p>
+  <p style="margin-top:16px;font-weight:600;color:#1C1E22">(720) 340-8144</p>
+</div>
+
+<!-- ALREADY SIGNED -->
+<div class="state" id="state-signed">
+  <div class="state-icon" style="background:#dcfce7">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+  </div>
+  <h2>Already Signed</h2>
+  <p>This agreement has already been signed. No further action is needed.</p>
+  <p style="margin-top:16px;font-weight:600;color:#1C1E22">(720) 340-8144</p>
+</div>
+
+<!-- SUCCESS -->
+<div class="state" id="state-success">
+  <div class="state-icon" style="background:#fdf3dc">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#D4900A" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+  </div>
+  <h2>Agreement Signed!</h2>
+  <p>Thank you. Your signed rental agreement has been received. Mo's Hauling will be in touch shortly.</p>
+  <p style="margin-top:20px;font-size:13px;color:#6b7280">Questions? Call or text us at</p>
+  <p style="font-weight:700;color:#1C1E22;font-size:16px;margin-top:4px">(720) 340-8144</p>
+</div>
+
+<!-- AGREEMENT FORM -->
+<div id="state-form" style="display:none">
+  <div class="container">
+
+    <div class="card">
+      <div style="text-align:center;border-bottom:2px solid #1C1E22;padding-bottom:14px;margin-bottom:16px">
+        <div style="font-size:17px;font-weight:700;letter-spacing:.5px;color:#1C1E22">MO'S HAULING, LLC</div>
+        <div style="font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-top:3px">Roll-Off Dumpster Rental Agreement</div>
+      </div>
+      <div class="section-title">Renter Information</div>
+      <table style="margin-bottom:16px">
+        <tr><td>Name</td><td id="d-name" style="font-weight:600"></td></tr>
+        <tr><td>Phone</td><td id="d-phone"></td></tr>
+        <tr><td>Email</td><td id="d-email"></td></tr>
+      </table>
+      <div class="section-title" style="margin-top:16px">Service Details</div>
+      <table>
+        <tr><td>Drop-off Location</td><td id="d-addr" style="font-weight:600"></td></tr>
+        <tr><td>Container</td><td>15 Cubic Yard Roll-Off<br><span style="font-size:11px;color:#6b7280">Delivery, pickup &amp; disposal of up to 2 tons (4,000 lbs)</span></td></tr>
+        <tr><td>Delivery Date</td><td id="d-dropoff"></td></tr>
+        <tr><td>Rental Period</td><td id="d-days"></td></tr>
+        <tr><td>Scheduled Pickup</td><td id="d-pickup"></td></tr>
+        <tr class="price-row"><td>Total Due</td><td id="d-price"></td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Terms &amp; Conditions</div>
+
+      <div class="term-title">1. Payment</div>
+      <div class="term-body">Full payment is due prior to or upon delivery. Renter authorizes Mo's Hauling, LLC to charge any additional fees including overweight charges, extended rental fees, contamination fees, trip fees, and damage costs.</div>
+
+      <div class="term-title">2. Overweight / Overage</div>
+      <div class="term-body">Base price includes up to 2 tons (4,000 lbs). Excess weight is billed at $95 per ton. Renter is responsible for all excess weight charges. Overloaded containers will not be picked up until resolved.</div>
+
+      <div class="term-title">3. Prohibited Items</div>
+      <div class="term-body">The following are prohibited and will result in additional fees or refusal of service:
+        <ul>
+          <li>Hazardous materials (paints, solvents, chemicals, asbestos)</li>
+          <li>Tires, batteries, appliances with refrigerants</li>
+          <li>Electronics (unless pre-approved)</li>
+          <li>Liquids, biohazards, or medical waste</li>
+        </ul>
+      </div>
+
+      <div class="term-title">4. Placement &amp; Property Responsibility</div>
+      <div class="term-body">Renter is responsible for designating a safe, accessible placement location on private property. Renter assumes all liability for any damage to driveways, landscaping, or other surfaces. Mo's Hauling is not responsible for driveway damage.</div>
+
+      <div class="term-title">5. Container Use</div>
+      <div class="term-body">Do not overfill the container above the rim. All debris must be level with or below the top edge. Materials extending above the sides are not permitted and may result in refusal of pickup or additional charges.</div>
+
+      <div class="term-title">6. Right to Refuse Service</div>
+      <div class="term-body">Company reserves the right to refuse delivery or pickup at its sole discretion. If service cannot be completed due to prohibited items or unsafe conditions, trip fees and downtime charges may apply.</div>
+
+      <div class="term-title">7. Rental Period &amp; Extensions</div>
+      <div class="term-body">Rental period begins on the delivery date. Extensions beyond the agreed period must be requested in advance. Additional daily or weekly rates apply for extensions and will be charged to the payment method on file.</div>
+
+      <div class="term-title">8. Early Pickup</div>
+      <div class="term-body">Early pickup requests are subject to availability. No refunds are provided for unused rental days. Minimum rental fee applies regardless of duration.</div>
+
+      <div class="term-title">9. Cancellations</div>
+      <div class="term-body">Cancellations made less than 24 hours before scheduled delivery may incur a trip fee. No-shows or inaccessible delivery locations on the scheduled day will be charged a full trip fee.</div>
+
+      <div class="term-title">10. Permits</div>
+      <div class="term-body">Renter is solely responsible for obtaining any required municipal or HOA permits for container placement on public property or right-of-way. Mo's Hauling assumes no liability for permit violations.</div>
+
+      <div class="term-title">11. Indemnification</div>
+      <div class="term-body">Renter agrees to indemnify, defend, and hold harmless Mo's Hauling, LLC and its employees from any claims, damages, or liabilities arising from the renter's use of the container or services.</div>
+
+      <div class="term-title">12. Limitation of Liability</div>
+      <div class="term-body">To the fullest extent permitted by law, Company's total liability shall not exceed the rental fee paid. Company is not liable for incidental, consequential, or indirect damages.</div>
+    </div>
+
+    <div class="card">
+      <div class="notice">
+        <strong>By signing below</strong>, I acknowledge that I have read, understand, and agree to all terms and conditions of this Roll-Off Dumpster Rental Agreement with Mo's Hauling, LLC.
+      </div>
+      <div class="sig-label">Your Signature *</div>
+      <div class="sig-wrap" id="sig-wrap">
+        <canvas id="sig-canvas" height="180"></canvas>
+        <div class="sig-hint" id="sig-hint">Sign here with finger or stylus</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+        <div style="font-size:12px;color:#6b7280">Date: <strong id="sig-date"></strong></div>
+        <button onclick="clearSig()" style="background:none;border:none;font-size:13px;color:#6b7280;cursor:pointer;padding:4px 8px">Clear</button>
+      </div>
+      <button class="btn btn-primary" id="submit-btn" onclick="submitSignature()">Submit Signed Agreement</button>
+      <div id="submit-err" style="display:none;margin-top:10px;background:#fee2e2;color:#b91c1c;padding:10px 12px;border-radius:6px;font-size:13px;text-align:center"></div>
+    </div>
+
+    <div style="text-align:center;padding:20px 0 32px;font-size:12px;color:#9ca3af">
+      Mo's Hauling, LLC &nbsp;·&nbsp; (720) 340-8144 &nbsp;·&nbsp; Denver Metro
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.5/dist/signature_pad.umd.min.js"></script>
+<script>
+const FB_KEY='AIzaSyDSWDpb8IEO8WvHeYJ7kvxcReq8Pe2En2A';
+const FB_PROJECT='mos-hauling';
+let fbDb=null, sigPad=null, currentRental=null;
+
+function show(id){
+  ['state-loading','state-error','state-signed','state-success','state-form'].forEach(s=>{
+    const el=document.getElementById(s);
+    if(el){el.style.display='none';el.classList.remove('active');}
+  });
+  const el=document.getElementById(id);
+  if(!el) return;
+  if(id==='state-form'){el.style.display='block';}
+  else{el.style.display='flex';el.classList.add('active');}
+}
+
+function fmtD(iso){
+  if(!iso) return '—';
+  return new Date(iso).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true});
+}
+function fmtDate(iso){
+  if(!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+}
+
+async function loadScript(src){
+  return new Promise((res,rej)=>{
+    const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);
+  });
+}
+
+async function init(){
+  const params=new URLSearchParams(window.location.search);
+  const rentalId=params.get('r');
+  if(!rentalId){
+    document.getElementById('error-msg').textContent='No agreement ID found in this link. Please contact Mo\'s Hauling.';
+    show('state-error');return;
+  }
+
+  try{
+    await loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
+    await loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js');
+    if(!firebase.apps.length){
+      firebase.initializeApp({apiKey:FB_KEY,authDomain:FB_PROJECT+'.firebaseapp.com',projectId:FB_PROJECT});
+    }
+    fbDb=firebase.firestore();
+  }catch(e){
+    document.getElementById('error-msg').textContent='Could not connect to the server. Please check your connection and try again.';
+    show('state-error');return;
+  }
+
+  try{
+    const snap=await fbDb.collection('rentals').doc(rentalId).get();
+    if(!snap.exists){
+      document.getElementById('error-msg').textContent='Agreement #'+rentalId.toUpperCase()+' was not found. It may have been cancelled or the link is incorrect.';
+      show('state-error');return;
+    }
+    const rental=snap.data();
+    currentRental=rental;
+
+    if(rental.agreement&&rental.agreement.sigDataUrl){
+      show('state-signed');return;
+    }
+
+    populateForm(rental);
+    show('state-form');
+    initSigPad();
+  }catch(e){
+    console.error('Firebase read error:',e);
+    document.getElementById('error-msg').textContent='Failed to load agreement. Please try again or contact Mo\'s Hauling.';
+    show('state-error');
+  }
+}
+
+function populateForm(rental){
+  const c=rental.customer, s=rental.service;
+  document.getElementById('d-name').textContent=c.name||'—';
+  document.getElementById('d-phone').textContent=c.phone||'—';
+  document.getElementById('d-email').textContent=c.email||'—';
+  document.getElementById('d-addr').textContent=s.address||'—';
+  document.getElementById('d-dropoff').textContent=fmtD(s.dropoffDate);
+  document.getElementById('d-days').textContent=(s.rentalDays||'—')+' days';
+  document.getElementById('d-pickup').textContent=fmtDate(s.pickupDate);
+  document.getElementById('d-price').textContent='$'+(s.price||0)+'.00';
+  document.getElementById('sig-date').textContent=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+}
+
+function initSigPad(){
+  const canvas=document.getElementById('sig-canvas');
+  const dpr=window.devicePixelRatio||1;
+  canvas.width=(canvas.offsetWidth||340)*dpr;
+  canvas.height=180*dpr;
+  canvas.style.width='100%';canvas.style.height='180px';
+  const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);
+  sigPad=new SignaturePad(canvas,{backgroundColor:'rgb(255,255,255)',penColor:'rgb(0,0,0)'});
+  sigPad.addEventListener('beginStroke',()=>{
+    const h=document.getElementById('sig-hint');if(h) h.style.display='none';
+  });
+}
+
+function clearSig(){
+  if(sigPad) sigPad.clear();
+  const h=document.getElementById('sig-hint');if(h) h.style.display='block';
+}
+
+async function submitSignature(){
+  if(!sigPad||sigPad.isEmpty()){
+    showErr('Please sign above before submitting.');return;
+  }
+  const btn=document.getElementById('submit-btn');
+  btn.textContent='Saving…';btn.disabled=true;
+  hideErr();
+
+  try{
+    const sigDataUrl=sigPad.toDataURL('image/jpeg',0.5);
+    const signedAt=new Date().toISOString();
+    await fbDb.collection('rentals').doc(currentRental.id).update({
+      agreement:{sigDataUrl,signedAt},
+      status:'active'
+    });
+    show('state-success');
+  }catch(e){
+    console.error('Save error:',e);
+    showErr('Failed to save your signature. Please try again or contact Mo\'s Hauling at (720) 340-8144.');
+    btn.textContent='Submit Signed Agreement';btn.disabled=false;
+  }
+}
+
+function showErr(msg){
+  const el=document.getElementById('submit-err');
+  el.textContent=msg;el.style.display='block';
+}
+function hideErr(){
+  document.getElementById('submit-err').style.display='none';
+}
+
+init();
+</script>
+</body>
+</html>
