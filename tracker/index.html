@@ -594,7 +594,8 @@ const Store={
   settings(){
     return JSON.parse(localStorage.getItem('mh_s')||JSON.stringify({
       pk:'UArlcTXupXk48WJ10',sid:'service_nnqpehg',tid:'template_56np39x',
-      apptTid:'',
+      apptTid:'',rsid:'template_neu4djv',compid:'template_2jzc3hb',
+      reviewUrl:'https://g.page/r/CY4mLfjMPje9EAE/review',
       ownerEmail:'eric@moshauling.co',
       phone:'(720) 340-8144',rep:'Eric Dale',
       fbKey:'AIzaSyDSWDpb8IEO8WvHeYJ7kvxcReq8Pe2En2A',fbProject:'mos-hauling',calendlyToken:''
@@ -788,13 +789,13 @@ function renderStep(s){
       <div class="fg"><label>Full Name *</label><input id="f-name" type="text" value="${esc(draft.name||'')}" placeholder="John Smith" autocomplete="name"></div>
       <div class="fg"><label>Phone *</label><input id="f-phone" type="tel" value="${esc(draft.phone||'')}" placeholder="(720) 555-0100" autocomplete="tel"></div>
       <div class="fg"><label>Email Address *</label><input id="f-email" type="email" value="${esc(draft.email||'')}" placeholder="john@email.com" autocomplete="email"></div>
-      <div style="display:flex;align-items:flex-start;gap:12px;padding:13px;background:#fff9ed;border:1.5px solid #fcd34d;border-radius:4px;margin-bottom:14px;cursor:pointer" onclick="document.getElementById('f-remote').click()">
-        <input type="checkbox" id="f-remote" ${draft.remoteDropOff?'checked':''} style="width:18px;height:18px;flex-shrink:0;margin-top:1px;accent-color:var(--orange);cursor:pointer" onclick="event.stopPropagation()">
+      <label for="f-remote" style="display:flex;align-items:flex-start;gap:12px;padding:13px;background:#fff9ed;border:1.5px solid #fcd34d;border-radius:4px;margin-bottom:14px;cursor:pointer">
+        <input type="checkbox" id="f-remote" ${draft.remoteDropOff?'checked':''} style="width:18px;height:18px;flex-shrink:0;margin-top:1px;accent-color:var(--orange);cursor:pointer">
         <div>
           <div style="font-size:13px;font-weight:700;color:#92400e">Remote Drop-off</div>
           <div style="font-size:12px;color:#b45309;margin-top:2px;line-height:1.5">Customer is not on-site — they'll receive an email link to review and sign the agreement from their phone</div>
         </div>
-      </div>
+      </label>
       <button class="btn btn-primary btn-full" onclick="s1next()">Continue →</button>
     </div>`;
   }
@@ -2196,13 +2197,13 @@ function showPickupConfirm(id){
       <div style="font-size:15px;font-weight:600;color:var(--dark);margin-bottom:3px">${esc(r.customer.name)}</div>
       <div style="font-size:13px;color:var(--muted)">${esc(r.service.address)}</div>
     </div>
-    <div style="display:flex;align-items:flex-start;gap:12px;padding:14px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:4px;margin-bottom:20px;cursor:pointer" onclick="document.getElementById('pc-email-cb').click()">
-      <input type="checkbox" id="pc-email-cb" checked style="width:18px;height:18px;flex-shrink:0;margin-top:1px;accent-color:#16a34a;cursor:pointer" onclick="event.stopPropagation()">
+    <label for="pc-email-cb" style="display:flex;align-items:flex-start;gap:12px;padding:14px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:4px;margin-bottom:20px;cursor:pointer">
+      <input type="checkbox" id="pc-email-cb" checked style="width:18px;height:18px;flex-shrink:0;margin-top:1px;accent-color:#16a34a;cursor:pointer">
       <div>
         <div style="font-size:13px;font-weight:700;color:#15803d">Send pickup confirmation email</div>
         <div style="font-size:12px;color:#16a34a;margin-top:2px">Thank ${esc(r.customer.name)} + include a link to leave a Google review</div>
       </div>
-    </div>
+    </label>
     <div style="display:flex;gap:10px">
       <button class="btn btn-ghost" onclick="closeDetail()">Cancel</button>
       <button class="btn btn-primary" style="flex:1;background:var(--green)" onclick="confirmMarkDone('${id}')">✓ Confirm Pickup</button>
