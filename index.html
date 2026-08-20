@@ -51,6 +51,7 @@
 
     /* ── UTILITY ── */
     .container { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
     .btn-primary {
       display: inline-block; background: var(--gold); color: var(--white);
       font-weight: 700; font-size: 1rem; padding: 15px 32px; border-radius: 6px;
@@ -183,15 +184,41 @@
     .why-card h3 { font-family: 'Oswald', sans-serif; font-size: 1.25rem; font-weight: 600; margin-bottom: 10px; }
     .why-card p { font-size: .92rem; color: var(--text-light); line-height: 1.65; }
 
+    /* ── STORY TOGGLE ── */
+    .story-toggle-wrap { position: relative; z-index: 5; height: 0; display: flex; justify-content: center; }
+    .story-toggle {
+      margin-top: -26px; width: 68px; height: 52px; border-radius: 10px;
+      background: linear-gradient(135deg, #0D0F12 0%, #1C1E22 50%, #0D0F12 100%);
+      border: 2px solid var(--gold); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 10px 26px rgba(0,0,0,.35);
+      transition: border-color .2s, transform .2s;
+      padding: 0;
+    }
+    .story-toggle:hover { border-color: var(--gold-light); transform: translateY(3px); }
+    .story-toggle-arrow {
+      width: 16px; height: 16px; border-right: 3px solid var(--gold-light); border-bottom: 3px solid var(--gold-light);
+      transform: rotate(45deg); transition: transform .35s ease; margin-top: -4px;
+    }
+    .story-toggle[aria-expanded="true"] .story-toggle-arrow { transform: rotate(225deg); margin-top: 4px; }
+    .story-panel-wrap { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .45s ease; }
+    .story-panel-wrap.open { grid-template-rows: 1fr; }
+    .story-panel-inner { overflow: hidden; min-height: 0; }
+
     /* ── ABOUT US ── */
-    .about-us-section { background: var(--gold-pale); padding: 88px 0 64px; position: relative; }
+    .about-us-section {
+      background: linear-gradient(135deg, #0D0F12 0%, #1C1E22 50%, #0D0F12 100%);
+      padding: 56px 0 64px; position: relative;
+    }
+    .about-us-section .section-label { color: var(--gold-light); }
+    .about-us-section .section-title { color: var(--white); }
+    .about-us-section .divider { background: var(--gold); }
     .about-us-title { font-size: clamp(1.7rem, 2.7vw, 2.4rem); }
-    .about-divider { display: block; width: 100%; height: 70px; margin-bottom: -1px; }
     .about-us-copy { column-count: 2; column-gap: 56px; margin-top: 12px; }
-    .about-us-copy p { font-size: 1.02rem; color: var(--text-light); line-height: 1.75; margin-bottom: 16px; break-inside: avoid; }
-    .about-signature { font-family: 'Oswald', sans-serif; font-weight: 600; color: var(--gold); font-size: 1.05rem; margin-top: 4px !important; letter-spacing: .3px; }
+    .about-us-copy p { font-size: 1.02rem; color: rgba(255,255,255,.72); line-height: 1.75; margin-bottom: 16px; break-inside: avoid; }
+    .about-us-copy p.about-signature { font-family: 'Oswald', sans-serif; font-weight: 600; color: var(--gold-light); font-size: 1.05rem; margin-top: 4px !important; letter-spacing: .3px; }
     .about-mosaic { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 14px; height: 480px; margin-top: 44px; }
-    .about-mosaic img { width: 100%; height: 100%; min-width: 0; min-height: 0; object-fit: cover; border-radius: 10px; display: block; box-shadow: 0 10px 30px rgba(0,0,0,.14); }
+    .about-mosaic img { width: 100%; height: 100%; min-width: 0; min-height: 0; object-fit: cover; border-radius: 10px; display: block; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
     .about-photo-sky { grid-column: 1 / 3; grid-row: 1 / 3; }
     .about-photo-kiss { grid-column: 3 / 5; grid-row: 1 / 2; }
     .about-photo-trailer { grid-column: 3 / 4; grid-row: 2 / 3; }
@@ -200,14 +227,13 @@
       .about-mosaic { height: 400px; }
     }
     @media (max-width: 768px) {
-      .about-us-section { padding: 64px 0 48px; }
+      .about-us-section { padding: 48px 0 48px; }
       .about-us-copy { column-count: 1; }
       .about-mosaic { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(4, 140px); height: auto; }
       .about-photo-sky { grid-column: 1 / 3; grid-row: 1 / 3; }
       .about-photo-kiss { grid-column: 1 / 2; grid-row: 3 / 4; }
       .about-photo-trailer { grid-column: 2 / 3; grid-row: 3 / 4; }
       .about-photo-dumpsters { grid-column: 1 / 3; grid-row: 4 / 5; }
-      .about-divider { height: 42px; }
     }
     @media (max-width: 480px) {
       .about-mosaic { grid-template-rows: repeat(4, 120px); gap: 10px; }
@@ -638,6 +664,42 @@
     </div>
   </section>
 
+  <!-- STORY TOGGLE -->
+  <div class="story-toggle-wrap">
+    <button class="story-toggle" id="storyToggleBtn" type="button" aria-expanded="false" aria-controls="storyPanelWrap" onclick="toggleOurStory()">
+      <span class="story-toggle-arrow" aria-hidden="true"></span>
+      <span class="sr-only">Read our story</span>
+    </button>
+  </div>
+
+  <!-- ABOUT US (collapsible) -->
+  <div class="story-panel-wrap" id="storyPanelWrap">
+    <div class="story-panel-inner">
+      <section class="about-us-section">
+        <div class="container">
+          <div class="about-us-block">
+            <div class="section-label">Our Story</div>
+            <h2 class="section-title about-us-title">Built By A Guy And His Dog Who Got Tired Of Getting Ripped Off</h2>
+            <div class="divider"></div>
+            <div class="about-us-copy">
+              <p>Eric grew up in Parker, Colorado, and always figured he'd eventually build something with his own two hands. That chance came when he bought a fixer-upper out in the Midwest and decided to renovate it himself. Riding shotgun on every single dump run was his two-year-old Pyrador, Mosley — who treated each landfill visit like a five-star vacation.</p>
+              <p>A few too many run-ins with pricey, impersonal franchise junk removal and roll-off companies later, Eric had seen enough. If a guy and his dog could gut a house and haul off the debris themselves, they figured they could probably run a hauling company better than the ones giving them headaches.</p>
+              <p>Back in the Denver metro, Eric got to work building the business he wished he'd been able to hire in the first place — one where customers are treated like customers, and charged fairly, like good folks and neighbors deserve. Naming it was the easy part: the co-pilot who'd logged more landfill miles than anyone deserved the credit. Mo's Hauling was born.</p>
+              <p>Two years, one very good dog, and a growing fleet of dumpsters later, we're still doing it the same way we started — and we're just getting warmed up.</p>
+              <p class="about-signature">— Eric &amp; Mosley, Founders</p>
+            </div>
+            <div class="about-mosaic">
+              <img class="about-photo-sky" src="images/about-eric-mosley-sky.jpg" alt="Eric sitting on the bed of the Mo's Hauling truck with Mosley" loading="lazy" />
+              <img class="about-photo-kiss" src="images/about-mo-truck-kiss.jpg" alt="Mosley giving Eric a kiss in front of the Mo's Hauling trailer" loading="lazy" />
+              <img class="about-photo-trailer" src="images/about-eric-mosley-trailer.jpg" alt="Eric kneeling with Mosley in front of the Mo's Hauling dump trailer" loading="lazy" />
+              <img class="about-photo-dumpsters" src="images/about-mosley-dumpsters.jpg" alt="Eric and Mosley with the Mo's Hauling roll-off dumpster fleet" loading="lazy" />
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
   <!-- TRUST BAR -->
   <div class="trust-bar">
     <div class="container">
@@ -650,35 +712,6 @@
       </div>
     </div>
   </div>
-
-  <!-- ABOUT US -->
-  <section class="about-us-section">
-    <div class="container">
-      <div class="about-us-block">
-        <div class="section-label">Our Story</div>
-        <h2 class="section-title about-us-title">Built By A Guy And His Dog Who Got Tired Of Getting Ripped Off</h2>
-        <div class="divider"></div>
-        <div class="about-us-copy">
-          <p>Eric grew up in Parker, Colorado, and always figured he'd eventually build something with his own two hands. That chance came when he bought a fixer-upper out in the Midwest and decided to renovate it himself. Riding shotgun on every single dump run was his two-year-old Pyrador, Mosley — who treated each landfill visit like a five-star vacation.</p>
-          <p>A few too many run-ins with pricey, impersonal franchise junk removal and roll-off companies later, Eric had seen enough. If a guy and his dog could gut a house and haul off the debris themselves, they figured they could probably run a hauling company better than the ones giving them headaches.</p>
-          <p>Back in the Denver metro, Eric got to work building the business he wished he'd been able to hire in the first place — one where customers are treated like customers, and charged fairly, like good folks and neighbors deserve. Naming it was the easy part: the co-pilot who'd logged more landfill miles than anyone deserved the credit. Mo's Hauling was born.</p>
-          <p>Two years, one very good dog, and a growing fleet of dumpsters later, we're still doing it the same way we started — and we're just getting warmed up.</p>
-          <p class="about-signature">— Eric &amp; Mosley, Founders</p>
-        </div>
-        <div class="about-mosaic">
-          <img class="about-photo-sky" src="images/about-eric-mosley-sky.jpg" alt="Eric sitting on the bed of the Mo's Hauling truck with Mosley" loading="lazy" />
-          <img class="about-photo-kiss" src="images/about-mo-truck-kiss.jpg" alt="Mosley giving Eric a kiss in front of the Mo's Hauling trailer" loading="lazy" />
-          <img class="about-photo-trailer" src="images/about-eric-mosley-trailer.jpg" alt="Eric kneeling with Mosley in front of the Mo's Hauling dump trailer" loading="lazy" />
-          <img class="about-photo-dumpsters" src="images/about-mosley-dumpsters.jpg" alt="Eric and Mosley with the Mo's Hauling roll-off dumpster fleet" loading="lazy" />
-        </div>
-      </div>
-    </div>
-    <!-- Mountain break -->
-    <svg class="about-divider" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 100" preserveAspectRatio="none">
-      <path d="M0,100 L0,60 L90,42 L170,62 L250,34 L330,56 L410,0 L480,48 L560,18 L640,44 L720,0 L800,40 L880,20 L960,46 L1040,0 L1120,52 L1200,30 L1280,54 L1360,36 L1440,60 L1440,100 Z"
-        fill="var(--gold-pale)" />
-    </svg>
-  </section>
 
   <!-- WHY US -->
   <section class="why-us">
@@ -1432,6 +1465,13 @@
     function removePhoto(i) {
       qmPhotos.splice(i, 1);
       renderPhotoPreviews();
+    }
+
+    function toggleOurStory() {
+      const btn = document.getElementById('storyToggleBtn');
+      const wrap = document.getElementById('storyPanelWrap');
+      const isOpen = wrap.classList.toggle('open');
+      btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
     }
 
     function openQuoteModal(preselect) {
