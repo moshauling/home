@@ -185,22 +185,20 @@
     .why-card p { font-size: .92rem; color: var(--text-light); line-height: 1.65; }
 
     /* ── STORY TOGGLE ── */
-    .story-toggle-wrap { position: relative; z-index: 5; height: 0; display: flex; justify-content: center; }
     .story-toggle {
-      margin-top: -26px; width: 68px; height: 52px; border-radius: 10px;
-      background: linear-gradient(135deg, #0D0F12 0%, #1C1E22 50%, #0D0F12 100%);
-      border: 2px solid var(--gold); cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 10px 26px rgba(0,0,0,.35);
-      transition: border-color .2s, transform .2s;
-      padding: 0;
+      margin-top: 24px; display: inline-flex; align-items: center; gap: 10px;
+      background: rgba(212,144,10,.12); border: 1px solid rgba(212,144,10,.4);
+      color: var(--gold-light); font-family: 'Inter', sans-serif; font-weight: 700;
+      font-size: .82rem; letter-spacing: 1px; text-transform: uppercase;
+      padding: 12px 20px; border-radius: 8px; cursor: pointer;
+      transition: background .2s, border-color .2s, transform .15s;
     }
-    .story-toggle:hover { border-color: var(--gold-light); transform: translateY(3px); }
+    .story-toggle:hover { background: rgba(212,144,10,.2); border-color: var(--gold); transform: translateY(-2px); }
     .story-toggle-arrow {
-      width: 16px; height: 16px; border-right: 3px solid var(--gold-light); border-bottom: 3px solid var(--gold-light);
-      transform: rotate(45deg); transition: transform .35s ease; margin-top: -4px;
+      width: 8px; height: 8px; border-right: 2px solid var(--gold-light); border-bottom: 2px solid var(--gold-light);
+      transform: rotate(45deg); transition: transform .35s ease; margin-top: -3px;
     }
-    .story-toggle[aria-expanded="true"] .story-toggle-arrow { transform: rotate(225deg); margin-top: 4px; }
+    .story-toggle[aria-expanded="true"] .story-toggle-arrow { transform: rotate(225deg); margin-top: 3px; }
     .story-panel-wrap { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .45s ease; }
     .story-panel-wrap.open { grid-template-rows: 1fr; }
     .story-panel-inner { overflow: hidden; min-height: 0; }
@@ -654,6 +652,10 @@
               <div class="hero-stat-label">Day Available</div>
             </div>
           </div>
+          <button class="story-toggle" id="storyToggleBtn" type="button" aria-expanded="false" aria-controls="storyPanelWrap" onclick="toggleOurStory()">
+            See Our Story
+            <span class="story-toggle-arrow" aria-hidden="true"></span>
+          </button>
         </div>
         <div class="hero-image-wrap">
           <div class="hero-logo-ring">
@@ -663,14 +665,6 @@
       </div>
     </div>
   </section>
-
-  <!-- STORY TOGGLE -->
-  <div class="story-toggle-wrap">
-    <button class="story-toggle" id="storyToggleBtn" type="button" aria-expanded="false" aria-controls="storyPanelWrap" onclick="toggleOurStory()">
-      <span class="story-toggle-arrow" aria-hidden="true"></span>
-      <span class="sr-only">Read our story</span>
-    </button>
-  </div>
 
   <!-- ABOUT US (collapsible) -->
   <div class="story-panel-wrap" id="storyPanelWrap">
