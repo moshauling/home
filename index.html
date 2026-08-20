@@ -181,6 +181,21 @@
     .why-card h3 { font-family: 'Oswald', sans-serif; font-size: 1.25rem; font-weight: 600; margin-bottom: 10px; }
     .why-card p { font-size: .92rem; color: var(--text-light); line-height: 1.65; }
 
+    /* ── ABOUT US ── */
+    .about-us-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; padding-bottom: 72px; margin-bottom: 72px; border-bottom: 1px solid var(--gray-light); }
+    .about-us-text p { font-size: 1.02rem; color: var(--text-light); line-height: 1.75; margin-bottom: 16px; }
+    .about-us-text p:last-of-type { margin-bottom: 0; }
+    .about-signature { font-family: 'Oswald', sans-serif; font-weight: 600; color: var(--gold); font-size: 1.05rem; margin-top: 22px !important; letter-spacing: .3px; }
+    .about-us-photos { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(2, 1fr); gap: 14px; height: 460px; }
+    .about-us-photos img { width: 100%; height: 100%; min-width: 0; min-height: 0; object-fit: cover; border-radius: 10px; display: block; box-shadow: 0 10px 30px rgba(0,0,0,.14); }
+    @media (max-width: 1024px) {
+      .about-us-grid { grid-template-columns: 1fr; gap: 36px; }
+      .about-us-photos { order: -1; height: 400px; }
+    }
+    @media (max-width: 480px) {
+      .about-us-photos { height: 340px; gap: 10px; }
+    }
+
     /* ── SERVICES ── */
     .services { padding: 88px 0; background: var(--dark); }
     .services-intro { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: start; margin-bottom: 56px; }
@@ -622,6 +637,24 @@
   <!-- WHY US -->
   <section class="why-us">
     <div class="container">
+      <div class="about-us-grid">
+        <div class="about-us-text">
+          <div class="section-label">Our Story</div>
+          <h2 class="section-title">Built By A Guy And His Dog Who Got Tired Of Getting Ripped Off</h2>
+          <div class="divider"></div>
+          <p>Eric grew up in Parker, Colorado, and always figured he'd eventually build something with his own two hands. That chance came when he bought a fixer-upper out in the Midwest and decided to renovate it himself. Riding shotgun on every single dump run was his two-year-old Pyrador, Mosley — who treated each landfill visit like a five-star vacation.</p>
+          <p>A few too many run-ins with pricey, impersonal franchise junk removal and roll-off companies later, Eric had seen enough. If a guy and his dog could gut a house and haul off the debris themselves, they figured they could probably run a hauling company better than the ones giving them headaches.</p>
+          <p>Back in the Denver metro, Eric got to work building the business he wished he'd been able to hire in the first place — one where customers are treated like customers, and charged fairly, like good folks and neighbors deserve. Naming it was the easy part: the co-pilot who'd logged more landfill miles than anyone deserved the credit. Mo's Hauling was born.</p>
+          <p>Two years, one very good dog, and a growing fleet of dumpsters later, we're still doing it the same way we started — and we're just getting warmed up.</p>
+          <p class="about-signature">— Eric &amp; Mosley, Founders</p>
+        </div>
+        <div class="about-us-photos">
+          <img src="images/about-eric-mosley-sky.jpg" alt="Eric and Mosley, the dog behind Mo's Hauling, sitting on the trailer together" loading="lazy" />
+          <img src="images/about-mo-truck-kiss.jpg" alt="Mosley giving Eric a kiss in front of the Mo's Hauling trailer" loading="lazy" />
+          <img src="images/about-eric-mosley-trailer.jpg" alt="Eric kneeling with Mosley in front of the Mo's Hauling dump trailer" loading="lazy" />
+          <img src="images/about-mosley-dumpsters.jpg" alt="Eric and Mosley with the Mo's Hauling roll-off dumpster fleet" loading="lazy" />
+        </div>
+      </div>
       <div class="section-label">Why Mo's Hauling</div>
       <h2 class="section-title">Denver Trusts Us to Get It Done</h2>
       <div class="divider"></div>
