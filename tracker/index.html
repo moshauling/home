@@ -789,13 +789,13 @@ function renderStep(s){
       <div class="fg"><label>Full Name *</label><input id="f-name" type="text" value="${esc(draft.name||'')}" placeholder="John Smith" autocomplete="name"></div>
       <div class="fg"><label>Phone *</label><input id="f-phone" type="tel" value="${esc(draft.phone||'')}" placeholder="(720) 555-0100" autocomplete="tel"></div>
       <div class="fg"><label>Email Address *</label><input id="f-email" type="email" value="${esc(draft.email||'')}" placeholder="john@email.com" autocomplete="email"></div>
-      <div style="display:flex;align-items:flex-start;gap:12px;padding:13px;background:#fff9ed;border:1.5px solid #fcd34d;border-radius:4px;margin-bottom:14px;cursor:pointer" onclick="var c=document.getElementById('f-remote');c.checked=!c.checked">
-        <input type="checkbox" id="f-remote" ${draft.remoteDropOff?'checked':''} style="width:18px;height:18px;flex-shrink:0;margin-top:1px;accent-color:var(--orange);pointer-events:none">
-        <div>
-          <div style="font-size:13px;font-weight:700;color:#92400e">Remote Drop-off</div>
-          <div style="font-size:12px;color:#b45309;margin-top:2px;line-height:1.5">Customer is not on-site — they'll receive an email link to review and sign the agreement from their phone</div>
-        </div>
-      </div>
+      <label for="f-remote" style="display:flex;align-items:flex-start;gap:12px;padding:13px;background:#fff9ed;border:1.5px solid #fcd34d;border-radius:4px;margin-bottom:14px;cursor:pointer;user-select:none">
+        <input type="checkbox" id="f-remote" ${draft.remoteDropOff?'checked':''} style="width:18px;height:18px;flex-shrink:0;margin-top:1px;accent-color:var(--orange);cursor:pointer">
+        <span style="display:block">
+          <span style="display:block;font-size:13px;font-weight:700;color:#92400e">Remote Drop-off</span>
+          <span style="display:block;font-size:12px;color:#b45309;margin-top:2px;line-height:1.5">Customer is not on-site — they'll receive an email link to review and sign the agreement from their phone</span>
+        </span>
+      </label>
       <button class="btn btn-primary btn-full" onclick="s1next()">Continue →</button>
     </div>`;
   }
@@ -2198,21 +2198,14 @@ function showPickupConfirm(id){
       <div style="font-size:15px;font-weight:600;color:var(--dark);margin-bottom:3px">${esc(r.customer.name)}</div>
       <div style="font-size:13px;color:var(--muted)">${esc(r.service.address)}</div>
     </div>
-    <div style="display:flex;align-items:flex-start;gap:12px;padding:14px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:4px;margin-bottom:20px;cursor:pointer" onclick="var c=document.getElementById('pc-email-cb');c.checked=!c.checked;event.stopPropagation()">
-      <input type="checkbox" id="pc-email-cb" checked style="width:18px;height:18px;flex-shrink:0;margin-top:1px;accent-color:#16a34a;pointer-events:none">
-      <div>
-        <div style="font-size:13px;font-weight:700;color:#15803d">Send pickup confirmation email</div>
-        <div style="font-size:12px;color:#16a34a;margin-top:2px">Thank ${esc(r.customer.name)} + include a link to leave a Google review</div>
-      </div>
-    </div>
-    <div style="display:flex;gap:10px">
-      <button class="btn btn-ghost" onclick="closeDetail()">Cancel</button>
-      <button class="btn btn-primary" style="flex:1;background:var(--green)" onclick="confirmMarkDone('${id}')">✓ Confirm Pickup</button>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button class="btn btn-primary" style="background:var(--green);justify-content:center" onclick="confirmMarkDone('${id}',true)">✓ Confirm Pickup + Send Review Email</button>
+      <button class="btn btn-ghost" style="justify-content:center" onclick="confirmMarkDone('${id}',false)">✓ Confirm Pickup Only</button>
+      <button class="btn btn-ghost" style="justify-content:center" onclick="closeDetail()">Cancel</button>
     </div>`;
 }
 
-async function confirmMarkDone(id){
-  const sendEmail=document.getElementById('pc-email-cb')?.checked;
+async function confirmMarkDone(id,sendEmail){
   const rs=Store.rentals();const r=rs.find(r=>r.id===id);
   if(r){r.status='completed';r.completedAt=new Date().toISOString();Store.saveRentals(rs);}
   closeDetail();renderList();refreshMap();
