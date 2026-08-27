@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Mo's Hauling – Bin Tracker</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4/dist/maplibre-gl.css"/>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -583,7 +583,7 @@ code{background:#e5e7eb;padding:1px 5px;border-radius:3px;font-size:11.5px;font-
 <div class="toaster" id="toaster"></div>
 
 <!-- SCRIPTS -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/maplibre-gl@4/dist/maplibre-gl.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.5/dist/signature_pad.umd.min.js"></script>
 <script>
 const Store={
@@ -631,7 +631,7 @@ function nav(v){
   document.querySelectorAll('.nb').forEach(el=>el.classList.remove('active'));
   document.getElementById('view-'+v).classList.add('active');
   document.getElementById('nb-'+v).classList.add('active');
-  if(v==='dashboard'){setTimeout(()=>MAP.invalidateSize(),80);refreshMap();checkTodayDropoffs();}
+  if(v==='dashboard'){setTimeout(()=>MAP.resize(),80);refreshMap();checkTodayDropoffs();}
   if(v==='rentals') renderList();
   if(v==='new-rental') initForm();
   if(v==='jobs') renderJobs();
@@ -664,27 +664,23 @@ function checkTodayDropoffs(){
       </div>`).join('')}`;
 }
 
-const MAP=L.map('map',{zoomControl:true}).setView([39.7392,-104.9903],11);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-  attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-  subdomains:'abc',maxZoom:19
-}).addTo(MAP);
+const MAP=new maplibregl.Map({
+  container:'map',
+  style:'https://tiles.openfreemap.org/styles/liberty',
+  center:[-104.9903,39.7392],
+  zoom:11,
+  attributionControl:true
+});
 
-function mkIcon(color,size=18){
-  return L.divIcon({
-    html:`<div style="background:${color};width:${size}px;height:${size}px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5)"></div>`,
-    iconSize:[size,size],iconAnchor:[size/2,size/2]
-  });
+function mkMarkerEl(color,size=18){
+  const el=document.createElement('div');
+  el.style.cssText=`width:${size}px;height:${size}px;border-radius:50%;background:${color};border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5);cursor:pointer;flex-shrink:0`;
+  return el;
 }
-const ICONS={
-  active:mkIcon('#16a34a'),
-  'due-soon':mkIcon('#d97706'),
-  overdue:mkIcon('#dc2626'),
-  completed:mkIcon('#9ca3af',14),
-  reserved:mkIcon('#2563eb'),
-  scheduled:mkIcon('#15803d')
+const ICON_COLORS={
+  active:'#16a34a','due-soon':'#d97706',overdue:'#dc2626',
+  completed:'#9ca3af',reserved:'#2563eb',scheduled:'#15803d',job:'#7c3aed'
 };
-const JOB_ICON=mkIcon('#7c3aed');
 
 let markers=[];
 let showCompletedOnMap=false;
@@ -696,8 +692,18 @@ function toggleCompletedOnMap(){
   refreshMap();
 }
 
+function addMarker(lngLat,color,size,popupHtml){
+  const m=new maplibregl.Marker({element:mkMarkerEl(color,size)})
+    .setLngLat(lngLat)
+    .setPopup(new maplibregl.Popup({offset:size/2+4,maxWidth:'280px'}).setHTML(popupHtml))
+    .addTo(MAP);
+  markers.push(m);
+  return m;
+}
+
 function refreshMap(){
-  markers.forEach(m=>MAP.removeLayer(m));markers=[];
+  markers.forEach(m=>m.remove());markers=[];
+  if(!MAP.isStyleLoaded()){MAP.once('load',refreshMap);return;}
   const rs=Store.rentals();
   let act=0,od=0,ds=0,res=0,comp=0;
   rs.forEach(r=>{
@@ -715,17 +721,14 @@ function refreshMap(){
     if(s==='overdue') od++;
     if(s==='due-soon') ds++;
     if(s==='reserved') res++;
-    const m=L.marker([r.service.lat,r.service.lng],{icon:ICONS[s]||ICONS.active})
-      .addTo(MAP)
-      .bindPopup(`
-        <div style="min-width:220px;font-family:'Inter',sans-serif">
-          <div style="font-family:'Oswald',sans-serif;font-size:15px;font-weight:700;color:#1C1E22;margin-bottom:4px">${esc(r.customer.name)}</div>
-          <div style="font-size:13px;color:#6B7280;margin-bottom:8px">${esc(r.service.address)}</div>
-          <div style="font-size:12px;margin-bottom:2px"><b>Drop-off:</b> ${fmtD(r.service.dropoffDate)}</div>
-          <div style="font-size:12px;margin-bottom:10px"><b>Pick-up:</b> ${fmtD(r.service.pickupDate)}</div>
-          <button onclick="showDetail('${r.id}')" style="background:#D4900A;color:#fff;border:none;padding:8px 14px;border-radius:4px;font-size:13px;cursor:pointer;width:100%;font-weight:600">View Details</button>
-        </div>`);
-    markers.push(m);
+    addMarker([r.service.lng,r.service.lat],ICON_COLORS[s]||ICON_COLORS.active,s==='completed'?14:18,`
+      <div style="min-width:220px;font-family:'Inter',sans-serif">
+        <div style="font-family:'Oswald',sans-serif;font-size:15px;font-weight:700;color:#1C1E22;margin-bottom:4px">${esc(r.customer.name)}</div>
+        <div style="font-size:13px;color:#6B7280;margin-bottom:8px">${esc(r.service.address)}</div>
+        <div style="font-size:12px;margin-bottom:2px"><b>Drop-off:</b> ${fmtD(r.service.dropoffDate)}</div>
+        <div style="font-size:12px;margin-bottom:10px"><b>Pick-up:</b> ${fmtD(r.service.pickupDate)}</div>
+        <button onclick="showDetail('${r.id}')" style="background:#D4900A;color:#fff;border:none;padding:8px 14px;border-radius:4px;font-size:13px;cursor:pointer;width:100%;font-weight:600">View Details</button>
+      </div>`);
   });
   // Jobs on map
   const jbs=Store.jobs();
@@ -734,17 +737,14 @@ function refreshMap(){
     if(!j.service||!j.service.lat||!j.service.lng) return;
     jcount++;
     if(!showJobsOnMap) return;
-    const m=L.marker([j.service.lat,j.service.lng],{icon:JOB_ICON})
-      .addTo(MAP)
-      .bindPopup(`
-        <div style="min-width:220px;font-family:'Inter',sans-serif">
-          <div style="font-family:'Oswald',sans-serif;font-size:15px;font-weight:700;color:#1C1E22;margin-bottom:2px">${esc(j.firstName+' '+j.lastName)}</div>
-          <div style="font-size:12px;color:#5b21b6;font-weight:600;margin-bottom:6px">${esc(j.jobType)}</div>
-          <div style="font-size:13px;color:#6B7280;margin-bottom:6px">${esc(j.service.address)}</div>
-          <div style="font-size:12px;margin-bottom:10px"><b>Amount:</b> $${(j.amount||0).toLocaleString()}</div>
-          <button onclick="showJobDetail('${j.id}')" style="background:#7c3aed;color:#fff;border:none;padding:8px 14px;border-radius:4px;font-size:13px;cursor:pointer;width:100%;font-weight:600">View Details</button>
-        </div>`);
-    markers.push(m);
+    addMarker([j.service.lng,j.service.lat],ICON_COLORS.job,18,`
+      <div style="min-width:220px;font-family:'Inter',sans-serif">
+        <div style="font-family:'Oswald',sans-serif;font-size:15px;font-weight:700;color:#1C1E22;margin-bottom:2px">${esc(j.firstName+' '+j.lastName)}</div>
+        <div style="font-size:12px;color:#5b21b6;font-weight:600;margin-bottom:6px">${esc(j.jobType)}</div>
+        <div style="font-size:13px;color:#6B7280;margin-bottom:6px">${esc(j.service.address)}</div>
+        <div style="font-size:12px;margin-bottom:10px"><b>Amount:</b> $${(j.amount||0).toLocaleString()}</div>
+        <button onclick="showJobDetail('${j.id}')" style="background:#7c3aed;color:#fff;border:none;padding:8px 14px;border-radius:4px;font-size:13px;cursor:pointer;width:100%;font-weight:600">View Details</button>
+      </div>`);
   });
   const el=document.getElementById('map-stats');
   el.innerHTML=`<div class="stat-chip"><div class="dot dg"></div>${act} Active</div>`
@@ -1699,13 +1699,13 @@ function startPinPlacement(id,type='rental'){
     banner.querySelector('span').textContent=`📍 Tap the map to place pin for ${esc(name)}`;
   }
   nav('dashboard');
-  MAP.getContainer().style.cursor='crosshair';
+  MAP.getCanvas().style.cursor='crosshair';
   pinPlacementHandler=function(e){
     if(pinPlacementType==='job'){
       const js=Store.jobs();
       const job=js.find(j=>j.id===pinPlacementId);
       if(job){
-        job.service.lat=e.latlng.lat;job.service.lng=e.latlng.lng;
+        job.service.lat=e.lngLat.lat;job.service.lng=e.lngLat.lng;
         job.service.locationPending=false;
         Store.saveJobs(js);refreshMap();
         toast('Pin placed for '+job.firstName+' '+job.lastName,'ok');
@@ -1714,7 +1714,7 @@ function startPinPlacement(id,type='rental'){
       const rs=Store.rentals();
       const rec=rs.find(r=>r.id===pinPlacementId);
       if(rec){
-        rec.service.lat=e.latlng.lat;rec.service.lng=e.latlng.lng;
+        rec.service.lat=e.lngLat.lat;rec.service.lng=e.lngLat.lng;
         rec.service.locationPending=false;
         Store.saveRentals(rs);refreshMap();
         toast('Pin placed for '+rec.customer.name,'ok');
@@ -1728,7 +1728,7 @@ function startPinPlacement(id,type='rental'){
 function cancelPinPlacement(){
   if(pinPlacementHandler) MAP.off('click',pinPlacementHandler);
   pinPlacementHandler=null;pinPlacementId=null;
-  MAP.getContainer().style.cursor='';
+  MAP.getCanvas().style.cursor='';
   const banner=document.getElementById('pin-placement-banner');
   if(banner) banner.style.display='none';
 }
