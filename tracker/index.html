@@ -229,6 +229,9 @@ code{background:#e5e7eb;padding:1px 5px;border-radius:3px;font-size:11.5px;font-
 .lc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px}
 .lc-name{font-family:'Oswald',sans-serif;font-size:16px;font-weight:600;letter-spacing:.2px}
 .lc-time{font-size:11px;color:var(--muted);white-space:nowrap;margin-top:3px}
+.lc-top-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.lc-del-btn{background:none;border:none;padding:2px 4px;font-size:14px;line-height:1;cursor:pointer;color:var(--border);transition:.15s;border-radius:3px}
+.lc-del-btn:hover{color:var(--red);background:var(--red-pale)}
 .lc-source{display:inline-block;background:var(--orange-pale);color:var(--dark);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:3px 9px;border-radius:3px;font-family:'Oswald',sans-serif;margin-top:5px}
 .lc-service{font-size:13px;color:var(--muted);margin-top:10px}
 .lc-service strong{color:var(--text)}
@@ -355,14 +358,14 @@ code{background:#e5e7eb;padding:1px 5px;border-radius:3px;font-size:11.5px;font-
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
     Map
   </button>
-  <button class="nb" onclick="nav('new-rental')" id="nb-new-rental">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-    New
-  </button>
   <button class="nb" onclick="nav('leads')" id="nb-leads">
     <span class="nav-badge" id="leads-badge"></span>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></svg>
     Leads
+  </button>
+  <button class="nb" onclick="nav('new-rental')" id="nb-new-rental">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+    New
   </button>
   <button class="nb" onclick="nav('rentals')" id="nb-rentals">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
@@ -754,6 +757,11 @@ function setLeadStatus(dateIso,status){
   fetch(url,{method:'POST',body:JSON.stringify({action:'updateStatus',date:dateIso,status})}).catch(()=>{});
 }
 
+function deleteLead(dateIso){
+  if(!confirm('Remove this lead from the list? It stays in the Google Sheet — this only hides it here.')) return;
+  setLeadStatus(dateIso,'Deleted');
+}
+
 function updateLeadsBadge(){
   const badge=document.getElementById('leads-badge');
   if(!badge) return;
@@ -772,6 +780,8 @@ function renderLeads(){
   const startOfToday=new Date(now.getFullYear(),now.getMonth(),now.getDate());
   const startOfWeek=new Date(startOfToday.getTime()-6*86400000);
   let ls=leadsCache.filter(l=>{
+    return l.Status!=='Deleted';
+  }).filter(l=>{
     if(curLeadFilter==='all') return true;
     const d=l.Date?new Date(l.Date):null;
     if(!d) return false;
@@ -796,7 +806,10 @@ function renderLeads(){
           <div class="lc-name">${esc(l.Name||'Unknown')}</div>
           <div class="lc-source">${esc(l['Source Page']||'Website')}</div>
         </div>
-        <div class="lc-time">${l.Date?fmtD(l.Date):''}</div>
+        <div class="lc-top-right">
+          <div class="lc-time">${l.Date?fmtD(l.Date):''}</div>
+          <button class="lc-del-btn" title="Delete (stays in the Sheet, just hidden here)" onclick="deleteLead('${l.Date}')">&#128465;</button>
+        </div>
       </div>
       <div class="lc-service"><strong>${esc(l.Service||'—')}</strong></div>
       <div class="lc-meta">
