@@ -494,12 +494,12 @@ code{background:#e5e7eb;padding:1px 5px;border-radius:3px;font-size:11.5px;font-
         3. Create a Template using the variables listed below<br>
         4. Paste your 3 credentials here — emails fire automatically on each signed rental
       </div>
-      <div class="fg"><label>Public Key</label><input type="text" id="s-pk" placeholder="your_public_key" oninput="saveSetting()"></div>
-      <div class="fg"><label>Service ID</label><input type="text" id="s-sid" placeholder="service_xxxxxxx" oninput="saveSetting()"></div>
-      <div class="fg"><label>Rental Agreement Template ID <span style="font-size:11px;color:var(--muted);font-weight:400">(sent after signing)</span></label><input type="text" id="s-tid" placeholder="template_xxxxxxx" oninput="saveSetting()"></div>
-      <div class="fg"><label>Appointment Confirmation Template ID <span style="font-size:11px;color:var(--muted);font-weight:400">(sent when appointment is booked)</span></label><input type="text" id="s-atid" placeholder="template_xxxxxxx" oninput="saveSetting()"></div>
-      <div class="fg"><label>Remote Signing Template ID <span style="font-size:11px;color:var(--muted);font-weight:400">(emails customer a link to sign digitally)</span></label><input type="text" id="s-rsid" placeholder="template_xxxxxxx" oninput="saveSetting()"></div>
-      <div class="fg"><label>Pickup Completion Template ID <span style="font-size:11px;color:var(--muted);font-weight:400">(sent when you mark a bin as picked up)</span></label><input type="text" id="s-compid" placeholder="template_xxxxxxx" oninput="saveSetting()"></div>
+      <div class="fg"><label>Public Key</label><input type="text" id="s-pk" placeholder="your_public_key" oninput="saveField('pk', this.value)"></div>
+      <div class="fg"><label>Service ID</label><input type="text" id="s-sid" placeholder="service_xxxxxxx" oninput="saveField('sid', this.value)"></div>
+      <div class="fg"><label>Rental Agreement Template ID <span style="font-size:11px;color:var(--muted);font-weight:400">(sent after signing)</span></label><input type="text" id="s-tid" placeholder="template_xxxxxxx" oninput="saveField('tid', this.value)"></div>
+      <div class="fg"><label>Appointment Confirmation Template ID <span style="font-size:11px;color:var(--muted);font-weight:400">(sent when appointment is booked)</span></label><input type="text" id="s-atid" placeholder="template_xxxxxxx" oninput="saveField('apptTid', this.value)"></div>
+      <div class="fg"><label>Remote Signing Template ID <span style="font-size:11px;color:var(--muted);font-weight:400">(emails customer a link to sign digitally)</span></label><input type="text" id="s-rsid" placeholder="template_xxxxxxx" oninput="saveField('rsid', this.value)"></div>
+      <div class="fg"><label>Pickup Completion Template ID <span style="font-size:11px;color:var(--muted);font-weight:400">(sent when you mark a bin as picked up)</span></label><input type="text" id="s-compid" placeholder="template_xxxxxxx" oninput="saveField('compid', this.value)"></div>
       <button class="btn btn-outline btn-sm" onclick="testEmail()">Send Test Email to Owner</button>
     </div>
 
@@ -529,10 +529,10 @@ code{background:#e5e7eb;padding:1px 5px;border-radius:3px;font-size:11.5px;font-
 
     <div class="s-section">
       <h3>Business Info</h3>
-      <div class="fg"><label>Owner Email</label><input type="email" id="s-oe" value="eric@moshauling.co" oninput="saveSetting()"></div>
-      <div class="fg"><label>Business Phone</label><input type="tel" id="s-bp" placeholder="(720) 341-8144" oninput="saveSetting()"></div>
-      <div class="fg"><label>Mo's Hauling Rep Name (appears on agreement)</label><input type="text" id="s-rep" placeholder="Eric Dale" oninput="saveSetting()"></div>
-      <div class="fg"><label>Google Reviews URL <span style="font-size:11px;color:var(--muted);font-weight:400">(included in pickup completion email)</span></label><input type="url" id="s-review-url" placeholder="https://g.page/r/..." oninput="saveSetting()"></div>
+      <div class="fg"><label>Owner Email</label><input type="email" id="s-oe" value="eric@moshauling.co" oninput="saveField('ownerEmail', this.value||'eric@moshauling.co')"></div>
+      <div class="fg"><label>Business Phone</label><input type="tel" id="s-bp" placeholder="(720) 341-8144" oninput="saveField('phone', this.value)"></div>
+      <div class="fg"><label>Mo's Hauling Rep Name (appears on agreement)</label><input type="text" id="s-rep" placeholder="Eric Dale" oninput="saveField('rep', this.value||'Eric Dale')"></div>
+      <div class="fg"><label>Google Reviews URL <span style="font-size:11px;color:var(--muted);font-weight:400">(included in pickup completion email)</span></label><input type="url" id="s-review-url" placeholder="https://g.page/r/..." oninput="saveField('reviewUrl', this.value)"></div>
     </div>
 
     <div class="s-section">
@@ -541,7 +541,7 @@ code{background:#e5e7eb;padding:1px 5px;border-radius:3px;font-size:11.5px;font-
         Quote requests from the homepage, /rentdumpster, and /removalquote log to this Google Sheet
         (via an Apps Script Web App) alongside the email notification. The Leads tab reads from it.
       </div>
-      <div class="fg"><label>Leads Sheet Web App URL</label><input type="text" id="s-leads-url" placeholder="https://script.google.com/macros/s/.../exec" oninput="saveSetting()"></div>
+      <div class="fg"><label>Leads Sheet Web App URL</label><input type="text" id="s-leads-url" placeholder="https://script.google.com/macros/s/.../exec" oninput="saveField('leadsSheetUrl', this.value)"></div>
     </div>
 
     <div class="s-section">
@@ -553,8 +553,8 @@ code{background:#e5e7eb;padding:1px 5px;border-radius:3px;font-size:11.5px;font-
         3. Project Settings (gear icon) → Your apps → Add Web app → copy <strong>apiKey</strong> and <strong>projectId</strong><br>
         4. Paste both below and tap <strong>Connect &amp; Sync</strong>
       </div>
-      <div class="fg"><label>Firebase API Key</label><input type="text" id="s-fbkey" placeholder="AIzaSy..." oninput="saveSetting()"></div>
-      <div class="fg"><label>Firebase Project ID</label><input type="text" id="s-fbproject" placeholder="your-project-id" oninput="saveSetting()"></div>
+      <div class="fg"><label>Firebase API Key</label><input type="text" id="s-fbkey" placeholder="AIzaSy..." oninput="saveField('fbKey', this.value)"></div>
+      <div class="fg"><label>Firebase Project ID</label><input type="text" id="s-fbproject" placeholder="your-project-id" oninput="saveField('fbProject', this.value)"></div>
       <div style="display:flex;align-items:center;gap:10px;margin-top:4px;flex-wrap:wrap">
         <button class="btn btn-primary btn-sm" onclick="startCloudSync()">Connect &amp; Sync</button>
         <button class="btn btn-ghost btn-sm" onclick="forcePushToCloud()">Force Push Local → Cloud</button>
@@ -567,7 +567,7 @@ code{background:#e5e7eb;padding:1px 5px;border-radius:3px;font-size:11.5px;font-
       <div class="info-box info-blue" style="margin-bottom:12px">
         <strong>Setup:</strong> In your Calendly event type, set <strong>Location → Ask invitee</strong> so customers enter their drop-off address at booking. Then paste your Personal Access Token below and tap Sync.
       </div>
-      <div class="fg"><label>Personal Access Token</label><input type="password" id="s-cal-token" placeholder="eyJraWQi..." oninput="saveSetting()"></div>
+      <div class="fg"><label>Personal Access Token</label><input type="password" id="s-cal-token" placeholder="eyJraWQi..." oninput="saveField('calendlyToken', this.value)"></div>
       <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
         <button class="btn btn-primary btn-sm" onclick="syncCalendly()">Sync Calendly Bookings</button>
         <span id="cal-sync-status" style="font-size:13px;color:var(--muted)"></span>
@@ -1832,23 +1832,13 @@ function loadSettingsUI(){
   if(fbDb) updateCloudStatus(true);
 }
 
-function saveSetting(){
-  Store.saveSettings({
-    pk:document.getElementById('s-pk').value,
-    sid:document.getElementById('s-sid').value,
-    tid:document.getElementById('s-tid').value,
-    apptTid:document.getElementById('s-atid').value,
-    rsid:document.getElementById('s-rsid').value,
-    compid:document.getElementById('s-compid').value,
-    reviewUrl:document.getElementById('s-review-url').value,
-    ownerEmail:document.getElementById('s-oe').value||'eric@moshauling.co',
-    phone:document.getElementById('s-bp').value,
-    rep:document.getElementById('s-rep').value||'Eric Dale',
-    fbKey:document.getElementById('s-fbkey').value,
-    fbProject:document.getElementById('s-fbproject').value,
-    calendlyToken:document.getElementById('s-cal-token').value,
-    leadsSheetUrl:document.getElementById('s-leads-url').value,
-  });
+// Saves exactly one setting, merged onto whatever is already stored — editing
+// one field can never overwrite another, even if some other field on the page
+// is stale, unloaded, or wrong for an unrelated reason.
+function saveField(key,value){
+  const s=Store.settings();
+  s[key]=value;
+  Store.saveSettings(s);
 }
 
 function clearAll(){
