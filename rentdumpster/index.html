@@ -817,6 +817,17 @@
     // involved) — Eric gets everything, including the requested delivery date/time,
     // and books it into Calendly himself.
     // EmailJS template: service_nnqpehg / template_888x9u8
+    // ── LEADS SHEET LOGGING ──
+    // Best-effort log to the shared Google Sheet the bin tracker's Leads tab reads
+    // from. Runs independently of the EmailJS send — a failure here is silent and
+    // never blocks the form.
+    const LEADS_SHEET_URL = 'https://script.google.com/macros/s/AKfycbw7Ola8IelaMHTnoXnuMNATBDZXvtFbvCtJ-9eybjMx-GrDt2qs9HgjREFEFFf0o2SE/exec';
+    function logLeadToSheet(data) {
+      try {
+        fetch(LEADS_SHEET_URL, { method: 'POST', body: JSON.stringify(data) }).catch(() => {});
+      } catch (e) {}
+    }
+
     async function submitBookForm(e) {
       e.preventDefault();
       const form = e.target;
@@ -842,6 +853,12 @@
       const btn = document.getElementById('book-submit-btn');
       btn.textContent = 'Sending…';
       btn.disabled = true;
+
+      logLeadToSheet({
+        name: get('from_name'), phone: get('phone'), email: get('email'),
+        service: 'Dumpster Rental — ' + info.label, message: summary,
+        source: 'Dumpster Rental Landing Page'
+      });
 
       try {
         await emailjs.send('service_nnqpehg', 'template_888x9u8', {
