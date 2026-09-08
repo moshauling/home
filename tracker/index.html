@@ -26,10 +26,11 @@ nav{background:var(--dark);color:#fff;height:var(--nav);display:flex;align-items
 .nav-logo-text{display:flex;flex-direction:column;line-height:1}
 .nav-logo-text span:first-child{font-family:'Oswald',sans-serif;font-size:17px;font-weight:700;color:#fff;letter-spacing:.5px}
 .nav-logo-text span:last-child{font-size:10px;color:rgba(255,255,255,.55);letter-spacing:1px;text-transform:uppercase;margin-top:1px}
-.nb{background:none;border:none;color:rgba(255,255,255,.6);padding:8px 8px;border-radius:4px;font-size:10px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:.15s;font-family:'Inter',sans-serif;letter-spacing:.3px;text-transform:uppercase;min-width:44px}
+.nb{position:relative;background:none;border:none;color:rgba(255,255,255,.6);padding:8px 8px;border-radius:4px;font-size:10px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:.15s;font-family:'Inter',sans-serif;letter-spacing:.3px;text-transform:uppercase;min-width:44px}
 .nb svg{width:20px;height:20px}
 .nb.active,.nb:hover{background:rgba(255,255,255,.12);color:#fff}
 .nb.active{border-bottom:2px solid var(--orange)}
+.nav-badge{position:absolute;top:1px;right:2px;background:var(--red);color:#fff;font-size:10px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:none;align-items:center;justify-content:center;padding:0 4px;font-family:'Inter',sans-serif;line-height:1;box-shadow:0 0 0 2px var(--dark)}
 
 /* VIEWS */
 .view{display:none;flex:1;overflow:hidden;flex-direction:column}
@@ -235,6 +236,17 @@ code{background:#e5e7eb;padding:1px 5px;border-radius:3px;font-size:11.5px;font-
 .lc-meta a{color:var(--dark);font-weight:600;text-decoration:none}
 .lc-meta a:hover{color:var(--orange)}
 .lc-msg{font-size:13px;color:var(--text);margin-top:10px;padding-top:10px;border-top:1px solid var(--border);white-space:pre-wrap;line-height:1.5}
+.lc.status-new{border-left-color:var(--orange)}
+.lc.status-contacted{border-left-color:var(--yellow)}
+.lc.status-scheduled{border-left-color:var(--green)}
+.lc.status-ghosted{border-left-color:var(--dark3);opacity:.65}
+.lc-status-row{display:flex;gap:6px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);flex-wrap:wrap}
+.lstatus-btn{padding:5px 11px;border-radius:3px;border:1.5px solid var(--border);background:#fff;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;cursor:pointer;font-family:'Oswald',sans-serif;color:var(--muted);transition:.15s}
+.lstatus-btn:hover{border-color:var(--dark3);color:var(--text)}
+.lstatus-btn.active[data-status="New"]{background:var(--orange);border-color:var(--orange);color:#fff}
+.lstatus-btn.active[data-status="Contacted"]{background:var(--yellow);border-color:var(--yellow);color:#fff}
+.lstatus-btn.active[data-status="Scheduled"]{background:var(--green);border-color:var(--green);color:#fff}
+.lstatus-btn.active[data-status="Ghosted"]{background:var(--dark3);border-color:var(--dark3);color:#fff}
 .rev-date-row{padding:10px 16px;background:#1a1d22;display:flex;gap:8px;align-items:center;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.06)}
 .rev-date-row input[type=date]{background:#2A2D33;border:1.5px solid rgba(255,255,255,.15);color:#fff;border-radius:4px;padding:7px 10px;font-size:13px;font-family:'Inter',sans-serif;flex:1;min-width:0;-webkit-appearance:none;color-scheme:dark}
 .rev-date-row input[type=date]:focus{outline:none;border-color:var(--orange)}
@@ -348,6 +360,7 @@ code{background:#e5e7eb;padding:1px 5px;border-radius:3px;font-size:11.5px;font-
     New
   </button>
   <button class="nb" onclick="nav('leads')" id="nb-leads">
+    <span class="nav-badge" id="leads-badge"></span>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></svg>
     Leads
   </button>
@@ -387,6 +400,13 @@ code{background:#e5e7eb;padding:1px 5px;border-radius:3px;font-size:11.5px;font-
     <button class="lfc" id="lfc-today" onclick="setLeadFilter('today')">Today</button>
     <button class="lfc" id="lfc-week" onclick="setLeadFilter('week')">This Week</button>
     <button class="lfc lfc-refresh" onclick="refreshLeads()">&#8635; Refresh</button>
+  </div>
+  <div class="filter-bar">
+    <button class="lfc active" id="lsfc-all" onclick="setLeadStatusFilter('all')">All Statuses</button>
+    <button class="lfc" id="lsfc-new" onclick="setLeadStatusFilter('New')">New</button>
+    <button class="lfc" id="lsfc-contacted" onclick="setLeadStatusFilter('Contacted')">Contacted</button>
+    <button class="lfc" id="lsfc-scheduled" onclick="setLeadStatusFilter('Scheduled')">Scheduled</button>
+    <button class="lfc" id="lsfc-ghosted" onclick="setLeadStatusFilter('Ghosted')">Ghosted</button>
   </div>
   <div class="scroll-view" id="leads-list"></div>
 </div>
@@ -686,22 +706,25 @@ function nav(v){
 // ─────────────────────────────────────────────
 let leadsCache=[];
 let curLeadFilter='all';
+let curLeadStatusFilter='all';
+const LEAD_STATUSES=['New','Contacted','Scheduled','Ghosted'];
 
 async function refreshLeads(){
   const el=document.getElementById('leads-list');
   const url=Store.settings().leadsSheetUrl;
   if(!url){
-    el.innerHTML='<div class="empty"><h3>Not Set Up Yet</h3><p>Add your Leads Sheet Web App URL in Settings to start pulling in website leads.</p></div>';
+    if(el) el.innerHTML='<div class="empty"><h3>Not Set Up Yet</h3><p>Add your Leads Sheet Web App URL in Settings to start pulling in website leads.</p></div>';
     return;
   }
-  el.innerHTML='<div class="empty"><p>Loading leads…</p></div>';
+  if(el) el.innerHTML='<div class="empty"><p>Loading leads…</p></div>';
   try{
     const res=await fetch(url);
     leadsCache=await res.json();
   }catch(e){
-    el.innerHTML='<div class="empty"><h3>Couldn\'t Load Leads</h3><p>Check your connection and try Refresh again.</p></div>';
+    if(el) el.innerHTML='<div class="empty"><h3>Couldn\'t Load Leads</h3><p>Check your connection and try Refresh again.</p></div>';
     return;
   }
+  updateLeadsBadge();
   renderLeads();
 }
 
@@ -711,6 +734,36 @@ function setLeadFilter(f){
   const btn=document.getElementById('lfc-'+f);
   if(btn) btn.classList.add('active');
   renderLeads();
+}
+
+function setLeadStatusFilter(f){
+  curLeadStatusFilter=f;
+  document.querySelectorAll('#lsfc-all,#lsfc-new,#lsfc-contacted,#lsfc-scheduled,#lsfc-ghosted').forEach(b=>b.classList.remove('active'));
+  const btn=document.getElementById('lsfc-'+f.toLowerCase());
+  if(btn) btn.classList.add('active');
+  renderLeads();
+}
+
+function setLeadStatus(dateIso,status){
+  const lead=leadsCache.find(l=>l.Date===dateIso);
+  if(lead) lead.Status=status;
+  updateLeadsBadge();
+  renderLeads();
+  const url=Store.settings().leadsSheetUrl;
+  if(!url) return;
+  fetch(url,{method:'POST',body:JSON.stringify({action:'updateStatus',date:dateIso,status})}).catch(()=>{});
+}
+
+function updateLeadsBadge(){
+  const badge=document.getElementById('leads-badge');
+  if(!badge) return;
+  const count=leadsCache.filter(l=>!l.Status||l.Status==='New').length;
+  if(count>0){
+    badge.textContent=count>99?'99+':count;
+    badge.style.display='flex';
+  } else {
+    badge.style.display='none';
+  }
 }
 
 function renderLeads(){
@@ -725,14 +778,19 @@ function renderLeads(){
     if(curLeadFilter==='today') return d>=startOfToday;
     if(curLeadFilter==='week') return d>=startOfWeek;
     return true;
+  }).filter(l=>{
+    if(curLeadStatusFilter==='all') return true;
+    const st=l.Status||'New';
+    return st===curLeadStatusFilter;
   }).sort((a,b)=>new Date(b.Date)-new Date(a.Date));
   if(!ls.length){
-    el.innerHTML=`<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></svg><h3>No Leads Yet</h3><p>New quote requests from the website will show up here.</p></div>`;
+    el.innerHTML=`<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></svg><h3>No Leads Found</h3><p>New quote requests from the website will show up here.</p></div>`;
     return;
   }
   el.innerHTML=ls.map(l=>{
     const phone=String(l.Phone||'').replace(/[^\d+]/g,'');
-    return`<div class="lc">
+    const status=l.Status||'New';
+    return`<div class="lc status-${status.toLowerCase()}">
       <div class="lc-top">
         <div>
           <div class="lc-name">${esc(l.Name||'Unknown')}</div>
@@ -746,6 +804,9 @@ function renderLeads(){
         ${l.Email?`<a href="mailto:${esc(l.Email)}">&#9993; ${esc(l.Email)}</a>`:''}
       </div>
       ${l.Message?`<div class="lc-msg">${esc(l.Message)}</div>`:''}
+      <div class="lc-status-row">
+        ${LEAD_STATUSES.map(s=>`<button class="lstatus-btn${status===s?' active':''}" data-status="${s}" onclick="setLeadStatus('${l.Date}','${s}')">${s}</button>`).join('')}
+      </div>
     </div>`;
   }).join('');
 }
@@ -2612,6 +2673,7 @@ function renderRevenue(){
 
 refreshMap();
 checkTodayDropoffs();
+refreshLeads();
 initFirebase().then(ok=>{if(ok){watchCloud();watchJobsCloud();}});
 </script>
 <!-- AGREEMENT VIEW OVERLAY -->
