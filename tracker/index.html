@@ -219,6 +219,22 @@ code{background:#e5e7eb;padding:1px 5px;border-radius:3px;font-size:11.5px;font-
 /* REVENUE TAB */
 .rev-fc{padding:6px 14px;border-radius:3px;border:1.5px solid rgba(255,255,255,.2);background:transparent;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:.15s;font-family:'Oswald',sans-serif;letter-spacing:.4px;text-transform:uppercase;color:rgba(255,255,255,.6)}
 .rev-fc.active{border-color:var(--orange);background:var(--orange);color:#fff}
+
+/* LEADS */
+.lfc{padding:6px 14px;border-radius:3px;border:1.5px solid rgba(255,255,255,.2);background:transparent;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:.15s;font-family:'Oswald',sans-serif;letter-spacing:.4px;text-transform:uppercase;color:rgba(255,255,255,.6)}
+.lfc.active{border-color:var(--orange);background:var(--orange);color:#fff}
+.lfc-refresh{margin-left:auto}
+.lc{background:var(--surface);border-radius:6px;padding:16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);border-left:4px solid var(--orange)}
+.lc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px}
+.lc-name{font-family:'Oswald',sans-serif;font-size:16px;font-weight:600;letter-spacing:.2px}
+.lc-time{font-size:11px;color:var(--muted);white-space:nowrap;margin-top:3px}
+.lc-source{display:inline-block;background:var(--orange-pale);color:var(--dark);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:3px 9px;border-radius:3px;font-family:'Oswald',sans-serif;margin-top:5px}
+.lc-service{font-size:13px;color:var(--muted);margin-top:10px}
+.lc-service strong{color:var(--text)}
+.lc-meta{display:flex;gap:16px;font-size:13px;margin-top:8px;flex-wrap:wrap}
+.lc-meta a{color:var(--dark);font-weight:600;text-decoration:none}
+.lc-meta a:hover{color:var(--orange)}
+.lc-msg{font-size:13px;color:var(--text);margin-top:10px;padding-top:10px;border-top:1px solid var(--border);white-space:pre-wrap;line-height:1.5}
 .rev-date-row{padding:10px 16px;background:#1a1d22;display:flex;gap:8px;align-items:center;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.06)}
 .rev-date-row input[type=date]{background:#2A2D33;border:1.5px solid rgba(255,255,255,.15);color:#fff;border-radius:4px;padding:7px 10px;font-size:13px;font-family:'Inter',sans-serif;flex:1;min-width:0;-webkit-appearance:none;color-scheme:dark}
 .rev-date-row input[type=date]:focus{outline:none;border-color:var(--orange)}
@@ -331,6 +347,10 @@ code{background:#e5e7eb;padding:1px 5px;border-radius:3px;font-size:11.5px;font-
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
     New
   </button>
+  <button class="nb" onclick="nav('leads')" id="nb-leads">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></svg>
+    Leads
+  </button>
   <button class="nb" onclick="nav('rentals')" id="nb-rentals">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
     Rentals
@@ -358,6 +378,17 @@ code{background:#e5e7eb;padding:1px 5px;border-radius:3px;font-size:11.5px;font-
     <span style="font-size:13px;font-weight:600">📍 Tap anywhere on the map to place the pin</span>
     <button onclick="cancelPinPlacement()" style="background:rgba(255,255,255,.2);border:none;color:#fff;padding:6px 14px;border-radius:4px;font-size:13px;cursor:pointer;white-space:nowrap">Cancel</button>
   </div>
+</div>
+
+<!-- LEADS -->
+<div class="view" id="view-leads">
+  <div class="filter-bar">
+    <button class="lfc active" id="lfc-all" onclick="setLeadFilter('all')">All</button>
+    <button class="lfc" id="lfc-today" onclick="setLeadFilter('today')">Today</button>
+    <button class="lfc" id="lfc-week" onclick="setLeadFilter('week')">This Week</button>
+    <button class="lfc lfc-refresh" onclick="refreshLeads()">&#8635; Refresh</button>
+  </div>
+  <div class="scroll-view" id="leads-list"></div>
 </div>
 
 <!-- NEW RENTAL -->
@@ -482,6 +513,15 @@ code{background:#e5e7eb;padding:1px 5px;border-radius:3px;font-size:11.5px;font-
     </div>
 
     <div class="s-section">
+      <h3>📋 Website Leads</h3>
+      <div class="info-box info-blue" style="margin-bottom:12px">
+        Quote requests from the homepage, /rentdumpster, and /removalquote log to this Google Sheet
+        (via an Apps Script Web App) alongside the email notification. The Leads tab reads from it.
+      </div>
+      <div class="fg"><label>Leads Sheet Web App URL</label><input type="text" id="s-leads-url" placeholder="https://script.google.com/macros/s/.../exec" oninput="saveSetting()"></div>
+    </div>
+
+    <div class="s-section">
       <h3>☁️ Cloud Sync (Cross-Device)</h3>
       <div class="info-box info-blue" style="margin-bottom:12px">
         <strong>One-time Firebase setup (~5 min, free):</strong><br>
@@ -598,7 +638,8 @@ const Store={
       reviewUrl:'https://g.page/r/CY4mLfjMPje9EAE/review',
       ownerEmail:'eric@moshauling.co',
       phone:'(720) 340-8144',rep:'Eric Dale',
-      fbKey:'AIzaSyDSWDpb8IEO8WvHeYJ7kvxcReq8Pe2En2A',fbProject:'mos-hauling',calendlyToken:''
+      fbKey:'AIzaSyDSWDpb8IEO8WvHeYJ7kvxcReq8Pe2En2A',fbProject:'mos-hauling',calendlyToken:'',
+      leadsSheetUrl:'https://script.google.com/macros/s/AKfycbw7Ola8IelaMHTnoXnuMNATBDZXvtFbvCtJ-9eybjMx-GrDt2qs9HgjREFEFFf0o2SE/exec'
     }))
   },
   saveSettings(s){localStorage.setItem('mh_s',JSON.stringify(s))},
@@ -637,6 +678,76 @@ function nav(v){
   if(v==='jobs') renderJobs();
   if(v==='revenue') setRevPreset(revPreset||'month');
   if(v==='settings') loadSettingsUI();
+  if(v==='leads') refreshLeads();
+}
+
+// ─────────────────────────────────────────────
+// LEADS
+// ─────────────────────────────────────────────
+let leadsCache=[];
+let curLeadFilter='all';
+
+async function refreshLeads(){
+  const el=document.getElementById('leads-list');
+  const url=Store.settings().leadsSheetUrl;
+  if(!url){
+    el.innerHTML='<div class="empty"><h3>Not Set Up Yet</h3><p>Add your Leads Sheet Web App URL in Settings to start pulling in website leads.</p></div>';
+    return;
+  }
+  el.innerHTML='<div class="empty"><p>Loading leads…</p></div>';
+  try{
+    const res=await fetch(url);
+    leadsCache=await res.json();
+  }catch(e){
+    el.innerHTML='<div class="empty"><h3>Couldn\'t Load Leads</h3><p>Check your connection and try Refresh again.</p></div>';
+    return;
+  }
+  renderLeads();
+}
+
+function setLeadFilter(f){
+  curLeadFilter=f;
+  document.querySelectorAll('#lfc-all,#lfc-today,#lfc-week').forEach(b=>b.classList.remove('active'));
+  const btn=document.getElementById('lfc-'+f);
+  if(btn) btn.classList.add('active');
+  renderLeads();
+}
+
+function renderLeads(){
+  const el=document.getElementById('leads-list');if(!el) return;
+  const now=new Date();
+  const startOfToday=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  const startOfWeek=new Date(startOfToday.getTime()-6*86400000);
+  let ls=leadsCache.filter(l=>{
+    if(curLeadFilter==='all') return true;
+    const d=l.Date?new Date(l.Date):null;
+    if(!d) return false;
+    if(curLeadFilter==='today') return d>=startOfToday;
+    if(curLeadFilter==='week') return d>=startOfWeek;
+    return true;
+  }).sort((a,b)=>new Date(b.Date)-new Date(a.Date));
+  if(!ls.length){
+    el.innerHTML=`<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></svg><h3>No Leads Yet</h3><p>New quote requests from the website will show up here.</p></div>`;
+    return;
+  }
+  el.innerHTML=ls.map(l=>{
+    const phone=String(l.Phone||'').replace(/[^\d+]/g,'');
+    return`<div class="lc">
+      <div class="lc-top">
+        <div>
+          <div class="lc-name">${esc(l.Name||'Unknown')}</div>
+          <div class="lc-source">${esc(l['Source Page']||'Website')}</div>
+        </div>
+        <div class="lc-time">${l.Date?fmtD(l.Date):''}</div>
+      </div>
+      <div class="lc-service"><strong>${esc(l.Service||'—')}</strong></div>
+      <div class="lc-meta">
+        ${l.Phone?`<a href="tel:${esc(phone)}">&#9742; ${esc(l.Phone)}</a>`:''}
+        ${l.Email?`<a href="mailto:${esc(l.Email)}">&#9993; ${esc(l.Email)}</a>`:''}
+      </div>
+      ${l.Message?`<div class="lc-msg">${esc(l.Message)}</div>`:''}
+    </div>`;
+  }).join('');
 }
 
 function checkTodayDropoffs(){
@@ -1643,6 +1754,7 @@ function loadSettingsUI(){
   document.getElementById('s-fbkey').value=c.fbKey||'';
   document.getElementById('s-fbproject').value=c.fbProject||'';
   document.getElementById('s-cal-token').value=c.calendlyToken||'';
+  document.getElementById('s-leads-url').value=c.leadsSheetUrl||'';
   if(fbDb) updateCloudStatus(true);
 }
 
@@ -1661,6 +1773,7 @@ function saveSetting(){
     fbKey:document.getElementById('s-fbkey').value,
     fbProject:document.getElementById('s-fbproject').value,
     calendlyToken:document.getElementById('s-cal-token').value,
+    leadsSheetUrl:document.getElementById('s-leads-url').value,
   });
 }
 
