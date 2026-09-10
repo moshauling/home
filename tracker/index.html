@@ -60,7 +60,7 @@ nav{background:var(--dark);color:#fff;height:var(--nav);display:flex;align-items
 .rc.overdue{border-left-color:var(--red)}
 .rc.due-soon{border-left-color:var(--yellow)}
 .rc.completed{border-left-color:#9ca3af;opacity:.7}
-.rc.scheduled{border-left-color:#15803d}
+.rc.scheduled{border-left-color:#a78bfa}
 .rc.reserved{border-left-color:#2563eb}
 .rc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
 .rc-name{font-family:'Oswald',sans-serif;font-size:16px;font-weight:600;letter-spacing:.2px}
@@ -74,7 +74,7 @@ nav{background:var(--dark);color:#fff;height:var(--nav);display:flex;align-items
 .b-overdue{background:var(--red-pale);color:var(--red)}
 .b-due-soon{background:var(--yellow-pale);color:var(--yellow)}
 .b-completed{background:#f3f4f6;color:#9ca3af}
-.b-scheduled{background:#dcfce7;color:#15803d}
+.b-scheduled{background:#ede9fe;color:#6d28d9}
 .b-reserved{background:#dbeafe;color:#1d4ed8}
 .b-job{background:#ede9fe;color:#5b21b6}
 
@@ -834,8 +834,9 @@ function checkTodayDropoffs(){
   });
   if(!due.length){banner.style.display='none';return;}
   banner.style.display='block';
+  banner.style.background='#6d28d9';
   banner.innerHTML=`
-    <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;opacity:.75;margin-bottom:6px">Drop-off${due.length>1?'s':''} scheduled today</div>
+    <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;opacity:.75;margin-bottom:6px">🚛 Drop-off${due.length>1?'s':''} today — tap to activate</div>
     ${due.map(r=>`
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px solid rgba(255,255,255,.2)">
         <div>
@@ -843,8 +844,8 @@ function checkTodayDropoffs(){
           <div style="font-size:12px;opacity:.8">${esc(r.service.address)}</div>
         </div>
         <button onclick="convertScheduled('${r.id}')"
-          style="flex-shrink:0;background:#fff;color:#15803d;border:none;padding:7px 14px;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">
-          Start Check-in →
+          style="flex-shrink:0;background:#fff;color:#6d28d9;border:none;padding:7px 14px;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">
+          Activate Bin →
         </button>
       </div>`).join('')}`;
 }
@@ -864,7 +865,7 @@ function mkMarkerEl(color,size=18){
 }
 const ICON_COLORS={
   active:'#16a34a','due-soon':'#d97706',overdue:'#dc2626',
-  completed:'#9ca3af',reserved:'#2563eb',scheduled:'#15803d',job:'#7c3aed'
+  completed:'#9ca3af',reserved:'#2563eb',scheduled:'#8b5cf6',job:'#7c3aed'
 };
 
 let markers=[];
@@ -898,10 +899,7 @@ function refreshMap(){
       comp++;
       if(!showCompletedOnMap) return;
     }
-    if(s==='scheduled'){
-      const msTil=new Date(r.service.dropoffDate).getTime()-Date.now();
-      if(msTil>48*3600000) return;
-    }
+    if(s==='scheduled') return; // scheduled bins stay off the map until activated
     if(s==='active') act++;
     if(s==='overdue') od++;
     if(s==='due-soon') ds++;
@@ -1571,6 +1569,8 @@ function renderList(){
   const sumEl=document.getElementById('rentals-summary');
   let rs=Store.rentals().filter(r=>{
     const s=rentalStatus(r);
+    // scheduled bins are hidden from "all" — they only surface in the Scheduled filter tab
+    if(s==='scheduled'&&curFilter==='all') return false;
     return curFilter==='all'||s===curFilter;
   }).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
   // completed revenue summary banner
@@ -1669,7 +1669,7 @@ function showDetail(id){
     </div>`:''}
     <div style="display:flex;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
       ${s==='scheduled'
-        ?`<button class="btn btn-primary" style="flex:1" onclick="convertScheduled('${id}')">Convert to Full Booking →</button>
+        ?`<button class="btn btn-primary" style="flex:1;background:#6d28d9;border-color:#6d28d9" onclick="convertScheduled('${id}')">🚛 Activate — Drop Off Now</button>
            <button class="btn btn-danger btn-sm" onclick="delRental('${id}')">Cancel</button>`
         :s==='reserved'
           ?`<button class="btn btn-primary" style="flex:1" onclick="completeAgreement('${id}')">Complete Agreement →</button>
@@ -1768,14 +1768,17 @@ function convertScheduled(id){
   draft={
     id:r.id,
     name:r.customer.name,email:r.customer.email,phone:r.customer.phone,
-    renterAddress:'',renterCity:'',renterState:'CO',renterZip:'',
+    renterAddress:r.customer.renterAddress||'',renterCity:r.customer.renterCity||'',
+    renterState:r.customer.renterState||'CO',renterZip:r.customer.renterZip||'',
     address:r.service.address,lat:r.service.lat,lng:r.service.lng,
-    dropoffDate:r.service.dropoffDate,rentalDays:7,customPickupDate:'',
-    travelFee:false,discount:0,price:0
+    dropoffDate:r.service.dropoffDate,
+    rentalDays:r.service.rentalDays||7,
+    customPickupDate:r.service.customPickupDate||'',
+    travelFee:false,discount:0,price:r.service.price||0
   };
   closeDetail();
   nav('new-rental');
-  renderStep(2);
+  renderStep(2); // jump straight to service details — customer info pre-filled
 }
 
 function completeAgreement(id){
