@@ -500,6 +500,7 @@ code{background:#e5e7eb;padding:1px 5px;border-radius:3px;font-size:11.5px;font-
       <div class="fg"><label>Appointment Confirmation Template ID <span style="font-size:11px;color:var(--muted);font-weight:400">(sent when appointment is booked)</span></label><input type="text" id="s-atid" placeholder="template_xxxxxxx" oninput="saveField('apptTid', this.value)"></div>
       <div class="fg"><label>Remote Signing Template ID <span style="font-size:11px;color:var(--muted);font-weight:400">(emails customer a link to sign digitally)</span></label><input type="text" id="s-rsid" placeholder="template_xxxxxxx" oninput="saveField('rsid', this.value)"></div>
       <div class="fg"><label>Pickup Completion Template ID <span style="font-size:11px;color:var(--muted);font-weight:400">(sent when you mark a bin as picked up)</span></label><input type="text" id="s-compid" placeholder="template_xxxxxxx" oninput="saveField('compid', this.value)"></div>
+      <div class="fg"><label>Renewal Template ID <span style="font-size:11px;color:var(--muted);font-weight:400">(sent to you when a bin is renewed — no customer email)</span></label><input type="text" id="s-renewid" placeholder="template_xxxxxxx" oninput="saveField('renewid', this.value)"></div>
       <button class="btn btn-outline btn-sm" onclick="testEmail()">Send Test Email to Owner</button>
     </div>
 
@@ -1676,9 +1677,9 @@ function showDetail(id){
              <button class="btn btn-ghost btn-sm" onclick="showPickupConfirm('${id}')" title="Bin picked up — no signature on file">Mark Complete</button>
              <button class="btn btn-danger btn-sm" onclick="delRental('${id}')">Cancel</button>`
           :s==='completed'
-            ?`<button class="btn btn-primary" style="flex:1" onclick="renewRental('${id}')">Renew — New Bin →</button>`
+            ?`<button class="btn btn-primary" style="flex:1" onclick="showRenewModal('${id}')">Renew Bin →</button>`
             :`<button class="btn btn-primary" style="flex:1" onclick="showPickupConfirm('${id}')">Mark Completed</button>
-               <button class="btn btn-ghost btn-sm" onclick="renewRental('${id}')">Renew Bin</button>
+               <button class="btn btn-ghost btn-sm" onclick="showRenewModal('${id}')">Renew Bin</button>
                <button class="btn btn-ghost btn-sm" onclick="extendRental('${id}')">Extend</button>`}
     </div>`;
   document.getElementById('detail-backdrop').classList.add('open');
@@ -1693,27 +1694,96 @@ function markDone(id){
   closeDetail();renderList();refreshMap();toast('Marked as completed','ok');
 }
 
-function renewRental(id){
+function showRenewModal(id){
   const r=Store.rentals().find(r=>r.id===id);if(!r) return;
-  closeDetail();
-  // Pre-fill customer info from existing rental, reset service fields for new booking
-  draft={
-    id:null,
-    name:r.customer.name,email:r.customer.email,phone:r.customer.phone,
-    renterAddress:r.customer.renterAddress||'',renterCity:r.customer.renterCity||'',
-    renterState:r.customer.renterState||'CO',renterZip:r.customer.renterZip||'',
-    address:'',lat:null,lng:null,locationPending:false,
-    dropoffDate:'',rentalDays:7,customPickupDate:'',
-    travelFee:0,discount:0,customPrice:0,price:0,
-    sigDataUrl:null,signedAt:null
+  const today=new Date().toISOString().slice(0,10);
+  document.getElementById('detail-modal').innerHTML=`
+    <div class="modal-hdr">
+      <div class="modal-title">Renew Bin</div>
+      <button class="mclose" onclick="closeDetail()">✕</button>
+    </div>
+    <div style="padding:10px 0 16px">
+      <div style="font-size:15px;font-weight:600;color:var(--dark);margin-bottom:2px">${esc(r.customer.name)}</div>
+      <div style="font-size:13px;color:var(--muted)">${esc(r.service.address)}</div>
+      ${r.agreement?.sigDataUrl?`<div style="font-size:12px;color:var(--green);margin-top:4px;font-weight:600">✓ Original agreement on file — no re-signing needed</div>`:`<div style="font-size:12px;color:var(--muted);margin-top:4px">Agreement carried over from existing record</div>`}
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div>
+        <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:5px">New Drop-off Date *</label>
+        <input type="date" id="renew-date" value="${today}" style="width:100%;padding:9px 10px;border:1.5px solid var(--border);border-radius:4px;font-size:14px;box-sizing:border-box">
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:5px">Rental Days *</label>
+        <input type="number" id="renew-days" value="7" min="1" max="30" style="width:100%;padding:9px 10px;border:1.5px solid var(--border);border-radius:4px;font-size:14px;box-sizing:border-box">
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:5px">Price ($) *</label>
+        <input type="number" id="renew-price" value="" min="0" placeholder="e.g. 365" style="width:100%;padding:9px 10px;border:1.5px solid var(--border);border-radius:4px;font-size:14px;box-sizing:border-box">
+      </div>
+      <button class="btn btn-primary" style="background:#D4900A;border-color:#D4900A;justify-content:center;margin-top:4px" onclick="confirmRenew('${id}')">✓ Renew Bin</button>
+      <button class="btn btn-ghost" style="justify-content:center" onclick="closeDetail()">Cancel</button>
+    </div>`;
+  document.getElementById('detail-backdrop').classList.add('open');
+}
+
+async function confirmRenew(id){
+  const orig=Store.rentals().find(r=>r.id===id);if(!orig) return;
+  const dateVal=document.getElementById('renew-date').value;
+  const daysVal=parseInt(document.getElementById('renew-days').value)||7;
+  const priceVal=parseFloat(document.getElementById('renew-price').value);
+  if(!dateVal){toast('Enter a drop-off date','err');return;}
+  if(!priceVal||priceVal<=0){toast('Enter a price for the renewal','err');return;}
+  const dropoff=new Date(dateVal+'T09:00:00').toISOString();
+  const pu=new Date(dateVal+'T09:00:00');pu.setDate(pu.getDate()+daysVal);
+  const renewal={
+    id:uid(),
+    renewedFrom:orig.id, // link back to original
+    customer:{...orig.customer},
+    service:{
+      address:orig.service.address,
+      lat:orig.service.lat,lng:orig.service.lng,
+      locationPending:false,
+      dropoffDate:dropoff,
+      rentalDays:daysVal,
+      customPickupDate:'',
+      pickupDate:pu.toISOString(),
+      price:priceVal
+    },
+    agreement:orig.agreement||null, // carry over signed agreement — no re-signing
+    status:'active',
+    createdAt:new Date().toISOString()
   };
-  // Navigate to new-rental but skip step 1 — jump straight to service details
-  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
-  document.querySelectorAll('.nb').forEach(el=>el.classList.remove('active'));
-  document.getElementById('view-new-rental').classList.add('active');
-  document.getElementById('nb-new-rental').classList.add('active');
-  renderStep(2);
-  toast('Customer info loaded — fill in new service details','ok');
+  const rs=Store.rentals();rs.push(renewal);Store.saveRentals(rs);
+  closeDetail();renderList();refreshMap();
+  toast('Bin renewed — now active!','ok');
+  await sendRenewEmail(renewal,orig);
+}
+
+async function sendRenewEmail(renewal,orig){
+  const cfg=Store.settings();
+  if(!cfg.pk||!cfg.sid||!cfg.renewid){
+    toast('Renewal email not configured — add Renewal Template ID in Settings');
+    return;
+  }
+  try{
+    await loadEJS();emailjs.init(cfg.pk);
+    await emailjs.send(cfg.sid,cfg.renewid,{
+      to_email:cfg.ownerEmail,
+      customer_name:renewal.customer.name,
+      customer_phone:renewal.customer.phone,
+      customer_email:renewal.customer.email,
+      service_address:renewal.service.address,
+      dropoff_date:fmtD(renewal.service.dropoffDate),
+      pickup_date:fmtD(renewal.service.pickupDate),
+      rental_days:renewal.service.rentalDays,
+      price:'$'+renewal.service.price,
+      agreement_id:orig.id.toUpperCase()
+    });
+    toast('Renewal notification sent','ok');
+  }catch(e){
+    console.error('[MH] Renewal email failed:',e);
+    toast('Renewal email failed — bin is still active','err');
+  }
 }
 
 function extendRental(id){
@@ -1774,11 +1844,17 @@ function convertScheduled(id){
     dropoffDate:r.service.dropoffDate,
     rentalDays:r.service.rentalDays||7,
     customPickupDate:r.service.customPickupDate||'',
-    travelFee:false,discount:0,price:r.service.price||0
+    travelFee:0,discount:0,
+    customPrice:r.service.price||0, // pre-fills the custom price field
+    price:r.service.price||0
   };
   closeDetail();
-  nav('new-rental');
-  renderStep(2); // jump straight to service details — customer info pre-filled
+  // Do NOT call nav() here — it triggers initForm() which wipes draft
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-new-rental').classList.add('active');
+  document.getElementById('nb-new-rental').classList.add('active');
+  renderStep(2); // step 2 reads from draft — customer info + address + date all pre-filled
 }
 
 function completeAgreement(id){
@@ -1824,6 +1900,7 @@ function loadSettingsUI(){
   document.getElementById('s-atid').value=c.apptTid||'';
   document.getElementById('s-rsid').value=c.rsid||'';
   document.getElementById('s-compid').value=c.compid||'';
+  document.getElementById('s-renewid').value=c.renewid||'';
   document.getElementById('s-review-url').value=c.reviewUrl||'';
   document.getElementById('s-oe').value=c.ownerEmail||'eric@moshauling.co';
   document.getElementById('s-bp').value=c.phone||'';
