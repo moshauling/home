@@ -1872,9 +1872,14 @@ async function confirmRenew(id){
     status:'active',
     createdAt:new Date().toISOString()
   };
-  const rs=Store.rentals();rs.push(renewal);Store.saveRentals(rs);
+  const rs=Store.rentals();
+  // Mark the original as completed
+  const origRec=rs.find(r=>r.id===id);
+  if(origRec){origRec.status='completed';origRec.completedAt=new Date().toISOString();}
+  rs.push(renewal);
+  Store.saveRentals(rs);
   closeDetail();renderList();refreshMap();
-  toast('Bin renewed — now active!','ok');
+  toast('Bin renewed — original marked complete','ok');
   await sendRenewEmail(renewal,orig);
 }
 
