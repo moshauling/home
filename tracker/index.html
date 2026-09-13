@@ -1681,12 +1681,131 @@ function showDetail(id){
             :`<button class="btn btn-primary" style="flex:1" onclick="showPickupConfirm('${id}')">Mark Completed</button>
                <button class="btn btn-ghost btn-sm" onclick="showRenewModal('${id}')">Renew Bin</button>
                <button class="btn btn-ghost btn-sm" onclick="extendRental('${id}')">Extend</button>`}
+    </div>
+    <div style="margin-top:8px">
+      <button class="btn btn-ghost btn-sm" style="width:100%;color:var(--muted)" onclick="showEditRental('${id}')">✏️ Edit Details</button>
     </div>`;
   document.getElementById('detail-backdrop').classList.add('open');
 }
 
 function closeDetail(){document.getElementById('detail-backdrop').classList.remove('open')}
 document.getElementById('detail-backdrop').addEventListener('click',function(e){if(e.target===this) closeDetail()});
+
+// ── EDIT RENTAL ───────────────────────────────────────────────────
+function showEditRental(id){
+  const r=Store.rentals().find(r=>r.id===id);if(!r) return;
+  const s=rentalStatus(r);
+  // stored status to select: active/due-soon/overdue all map to 'active' in the select
+  const storedStatus=(s==='active'||s==='due-soon'||s==='overdue')?'active':(r.status||s);
+  const TYPES_HTML=['scheduled','reserved','active','completed']
+    .map(v=>`<option value="${v}"${storedStatus===v?' selected':''}>${{scheduled:'Scheduled',reserved:'Reserved — Pending Signature',active:'Active',completed:'Completed'}[v]}</option>`).join('');
+  document.getElementById('detail-modal').innerHTML=`
+    <div class="modal-hdr">
+      <div class="modal-title">Edit Rental</div>
+      <button class="mclose" onclick="closeDetail()">✕</button>
+    </div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:16px">${esc(r.customer.name)}</div>
+    <div style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)">Renter</div>
+    <div class="fg"><label>Full Name</label><input id="er-name" type="text" value="${esc(r.customer.name)}"></div>
+    <div class="fg"><label>Phone</label><input id="er-phone" type="tel" value="${esc(r.customer.phone)}"></div>
+    <div class="fg"><label>Email</label><input id="er-email" type="email" value="${esc(r.customer.email)}"></div>
+    <div style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:16px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border)">Service</div>
+    <div class="fg"><label>Drop-off Address</label><input id="er-addr" type="text" value="${esc(r.service.address)}"></div>
+    <div class="fg"><label>Drop-off Date &amp; Time</label><input id="er-dt" type="datetime-local" value="${(r.service.dropoffDate||'').slice(0,16)}"></div>
+    <div class="fg"><label>Rental Days</label><input id="er-days" type="number" min="1" max="30" value="${r.service.rentalDays||7}"></div>
+    <div class="fg"><label>Custom Pick-up Date <span style="font-size:11px;font-weight:400;color:var(--muted)">(optional — overrides auto)</span></label><input id="er-custom-pu" type="date" value="${r.service.customPickupDate||''}"></div>
+    <div class="fg"><label>Price ($)</label><input id="er-price" type="number" min="0" step="1" value="${r.service.price||0}"></div>
+    <div class="fg"><label>Status</label><select id="er-status">${TYPES_HTML}</select></div>
+    <div style="display:flex;gap:10px;margin-top:18px">
+      <button class="btn btn-ghost" onclick="showDetail('${id}')">← Back</button>
+      <button class="btn btn-primary" style="flex:1" id="er-save-btn" onclick="saveEditRental('${id}')">Save Changes</button>
+    </div>`;
+  document.getElementById('detail-backdrop').classList.add('open');
+}
+
+async function saveEditRental(id){
+  const rs=Store.rentals();const r=rs.find(r=>r.id===id);if(!r) return;
+  const btn=document.getElementById('er-save-btn');
+  if(btn){btn.textContent='Saving…';btn.disabled=true;}
+  const newAddr=(document.getElementById('er-addr').value||'').trim();
+  if(newAddr&&newAddr!==r.service.address){
+    toast('Re-geocoding address…');
+    const geo=await geocode(newAddr);
+    r.service.address=newAddr;
+    if(geo){r.service.lat=geo.lat;r.service.lng=geo.lng;r.service.locationPending=false;}
+    else{r.service.lat=null;r.service.lng=null;r.service.locationPending=true;toast('Address not found — pin unset','err');}
+  }
+  const name=(document.getElementById('er-name').value||'').trim();if(name) r.customer.name=name;
+  r.customer.phone=(document.getElementById('er-phone').value||'').trim();
+  r.customer.email=(document.getElementById('er-email').value||'').trim();
+  const dt=document.getElementById('er-dt').value;if(dt) r.service.dropoffDate=dt;
+  const days=parseInt(document.getElementById('er-days').value)||r.service.rentalDays;r.service.rentalDays=days;
+  const customPu=document.getElementById('er-custom-pu').value;r.service.customPickupDate=customPu||'';
+  const price=parseFloat(document.getElementById('er-price').value);if(!isNaN(price)) r.service.price=price;
+  // Recompute pickupDate
+  if(customPu){r.service.pickupDate=new Date(customPu+'T12:00:00').toISOString();}
+  else if(r.service.dropoffDate){const pu=new Date(r.service.dropoffDate);pu.setDate(pu.getDate()+days);r.service.pickupDate=pu.toISOString();}
+  const newStatus=document.getElementById('er-status').value;
+  if(newStatus==='completed'&&r.status!=='completed') r.completedAt=new Date().toISOString();
+  r.status=newStatus;
+  Store.saveRentals(rs);renderList();refreshMap();
+  toast('Rental updated','ok');
+  showDetail(id);
+}
+
+// ── EDIT JOB ──────────────────────────────────────────────────────
+function showEditJob(id){
+  const j=Store.jobs().find(j=>j.id===id);if(!j) return;
+  const TYPES=['Junk Removal','Dirt & Soil Removal','Tree & Branch Removal','Concrete Removal','Fence Removal','Shed Removal','Hot Tub Removal','Demolition'];
+  document.getElementById('detail-modal').innerHTML=`
+    <div class="modal-hdr">
+      <div class="modal-title">Edit Job</div>
+      <button class="mclose" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="row2">
+      <div class="fg"><label>First Name</label><input id="ej-first" type="text" value="${esc(j.firstName)}"></div>
+      <div class="fg"><label>Last Name</label><input id="ej-last" type="text" value="${esc(j.lastName)}"></div>
+    </div>
+    <div class="fg"><label>Phone</label><input id="ej-phone" type="tel" value="${esc(j.phone||'')}"></div>
+    <div class="fg"><label>Email</label><input id="ej-email" type="email" value="${esc(j.email||'')}"></div>
+    <div class="fg"><label>Job Address</label><input id="ej-addr" type="text" value="${esc(j.service.address)}"></div>
+    <div class="fg"><label>Job Type</label>
+      <select id="ej-type">${TYPES.map(t=>`<option${t===j.jobType?' selected':''}>${esc(t)}</option>`).join('')}</select>
+    </div>
+    <div class="row2">
+      <div class="fg"><label>Amount ($)</label><input id="ej-amount" type="number" min="0" step="1" value="${j.amount||0}"></div>
+      <div class="fg"><label>Date Completed</label><input id="ej-date" type="date" value="${j.dateCompleted||''}"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:18px">
+      <button class="btn btn-ghost" onclick="showJobDetail('${id}')">← Back</button>
+      <button class="btn btn-primary" style="flex:1" id="ej-save-btn" onclick="saveEditJob('${id}')">Save Changes</button>
+    </div>`;
+  document.getElementById('detail-backdrop').classList.add('open');
+}
+
+async function saveEditJob(id){
+  const js=Store.jobs();const j=js.find(j=>j.id===id);if(!j) return;
+  const btn=document.getElementById('ej-save-btn');
+  if(btn){btn.textContent='Saving…';btn.disabled=true;}
+  const newAddr=(document.getElementById('ej-addr').value||'').trim();
+  if(newAddr&&newAddr!==j.service.address){
+    toast('Re-geocoding address…');
+    const geo=await geocode(newAddr);
+    j.service.address=newAddr;
+    if(geo){j.service.lat=geo.lat;j.service.lng=geo.lng;j.service.locationPending=false;}
+    else{j.service.lat=null;j.service.lng=null;j.service.locationPending=true;toast('Address not found — pin unset','err');}
+  }
+  const first=(document.getElementById('ej-first').value||'').trim();if(first) j.firstName=first;
+  const last=(document.getElementById('ej-last').value||'').trim();if(last) j.lastName=last;
+  j.phone=(document.getElementById('ej-phone').value||'').trim();
+  j.email=(document.getElementById('ej-email').value||'').trim();
+  j.jobType=document.getElementById('ej-type').value;
+  j.amount=parseFloat(document.getElementById('ej-amount').value)||0;
+  j.dateCompleted=document.getElementById('ej-date').value;
+  Store.saveJobs(js);renderJobs();refreshMap();
+  toast('Job updated','ok');
+  showJobDetail(id);
+}
 
 function markDone(id){
   const rs=Store.rentals();const r=rs.find(r=>r.id===id);
@@ -2136,7 +2255,8 @@ function showJobDetail(id){
       <button class="btn btn-sm btn-outline" style="width:100%" onclick="startPinPlacement('${id}','job')">Place Pin Manually on Map →</button>
     </div>`:''}
     <div style="display:flex;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
-      <button class="btn btn-danger btn-sm" onclick="deleteJob('${id}')">Delete Job</button>
+      <button class="btn btn-primary" style="flex:1" onclick="showEditJob('${id}')">✏️ Edit Details</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteJob('${id}')">Delete</button>
     </div>`;
   document.getElementById('detail-backdrop').classList.add('open');
 }
