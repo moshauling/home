@@ -673,6 +673,7 @@ const PRICE={3:300,7:365};
 const BIN='15 Cubic Yard Roll-Off';
 const EXTRA_DAY=30;
 const OVERAGE_TON=75;
+const OVERFILL_FEE=50;
 
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
 
@@ -1109,7 +1110,7 @@ function renderStep(s){
       <div class="section-hdr">Signature & Authorization</div>
       <div style="background:#fafafa;border:1.5px solid var(--border);border-radius:4px;padding:14px;margin-bottom:16px;font-size:13.5px;line-height:1.7">
         <p><strong>By signing below, I, ${esc(draft.name)}, acknowledge that I have read, understand, and agree to all terms and conditions of this Roll-Off Dumpster Rental Agreement with Mo's Hauling, LLC, dated ${today}.</strong></p>
-        <p style="margin-top:10px">I further authorize Mo's Hauling, LLC to charge any additional fees to my payment method on file, including overweight charges, extended rental fees, contamination fees, trip fees, and damage costs.</p>
+        <p style="margin-top:10px">I further authorize Mo's Hauling, LLC to charge any additional fees to my payment method on file, including overweight charges, overfill charges ($${OVERFILL_FEE} if materials exceed the top perimeter of the bin), extended rental fees, contamination fees, trip fees, and damage costs.</p>
       </div>
       <label>Renter Signature *</label>
       <div class="sig-wrap" id="sig-wrap">
@@ -1375,12 +1376,12 @@ function agreementHTML(d,isEmail=false){
 </table>
 <p>Rental includes delivery, pickup, and disposal of up to two (2) tons (4,000 lbs) of waste.</p>
 </div>
-<div class="agr-section"><h4>2. Payment Terms &amp; Authorization</h4><p>Full payment is due prior to or upon delivery. Renter authorizes Company to charge any additional fees to the payment method on file, including but not limited to: overweight charges, extended rental fees, contamination fees, trip fees, and damage or repair costs.</p></div>
+<div class="agr-section"><h4>2. Payment Terms &amp; Authorization</h4><p>Full payment is due prior to or upon delivery. Renter authorizes Company to charge any additional fees to the payment method on file, including but not limited to: overweight charges, overfill charges, extended rental fees, contamination fees, trip fees, and damage or repair costs.</p></div>
 <div class="agr-section"><h4>3. Overweight Charges</h4><ul><li>Any weight exceeding two (2) tons shall be charged at <strong>$${OVERAGE_TON} per additional ton</strong></li><li>All overages shall be rounded up to the nearest whole ton</li><li>Weight shall be determined solely by landfill scale tickets, which shall be final and binding</li></ul></div>
 <div class="agr-section"><h4>4. Extended Rental Period</h4><ul><li>Each additional day beyond the rental period shall be charged at <strong>$${EXTRA_DAY} per day</strong></li><li>Charges begin automatically unless prior arrangements are made with Company</li></ul></div>
 <div class="agr-section"><h4>5. Prohibited Materials</h4><p>Renter shall NOT place the following materials in the dumpster:</p><ul><li>Hazardous, toxic, or regulated waste; chemicals, solvents, oils, fuels</li><li>Paint (unless fully dried), tires, batteries</li><li>Asbestos-containing materials; appliances containing refrigerants (Freon)</li><li>Flammable or explosive materials</li><li>Heavy construction materials: concrete, gravel, dirt, asphalt, brick, stone, or similar dense materials</li></ul><p>If prohibited materials are discovered, Renter shall be liable for all removal costs, landfill penalties, regulatory fines, and administrative fees.</p></div>
 <div class="agr-section"><h4>6. Right to Refuse Service / Load</h4><p>Company reserves the right, at its sole discretion, to refuse delivery or pickup, or refuse to haul any container deemed unsafe, overloaded, or in violation of this Agreement. If service cannot be completed, trip fees and downtime charges may apply.</p></div>
-<div class="agr-section"><h4>7. Loading Requirements</h4><ul><li>Materials must not exceed the top edge of the container ("level load" requirement)</li><li>No material may protrude or create unsafe transport conditions</li><li>Renter assumes all responsibility for loading and contents</li><li>Overloaded dumpsters may be refused for pickup until corrected</li></ul></div>
+<div class="agr-section"><h4>7. Loading Requirements &amp; Overfill Charge</h4><ul><li>Materials must not exceed the top edge of the container ("level load" requirement)</li><li>No material may protrude or create unsafe transport conditions</li><li>If the container is loaded above the top perimeter of the bin at time of pickup, an <strong>overfill charge of $${OVERFILL_FEE} will be assessed</strong></li><li>Renter assumes all responsibility for loading and contents</li><li>Overloaded dumpsters may be refused for pickup until corrected; a return trip fee may apply</li></ul></div>
 <div class="agr-section"><h4>8. Access &amp; Trip Fees</h4><p>Renter agrees to provide safe and unobstructed access for delivery and pickup at all times. If Company is unable to perform delivery or pickup due to blocked access, vehicles in the way, or unsafe conditions, a trip charge per Company's current rate schedule may be assessed.</p></div>
 <div class="agr-section"><h4>9. Damage &amp; Site Liability</h4><p>Renter acknowledges that placement and removal of dumpsters may cause surface damage. Renter assumes full responsibility for any damage to driveways (including cracking or sinking), pavement or curbs, landscaping, and underground utilities. Company shall not be liable for such damages unless caused by gross negligence.</p></div>
 <div class="agr-section"><h4>10. Relocation &amp; Tampering</h4><p>Dumpster shall not be moved, relocated, or altered without written consent from Company. Renter is responsible for any theft, vandalism, or unauthorized use while on-site.</p></div>
