@@ -872,7 +872,9 @@
           photos_html:  ''
         });
         if (typeof gtag !== 'undefined') {
-          gtag('event', 'dumpster_lp_form_submit', { duration: selectedDuration });
+          // send_to is needed here: without it, this event reached dataLayer but no GA4 hit
+          // was sent (confirmed on the live page; this page loads GA4 via both gtag.js and GTM).
+          gtag('event', 'dumpster_lp_form_submit', { duration: selectedDuration, send_to: 'G-6NQ1R26L3F' });
           gtag('event', 'conversion', { send_to: 'AW-16676073753/_pZHCIXG0tYcEJni4o8-' });
         }
         if (typeof fbq !== 'undefined') { fbq('track', 'Lead', { content_name: info.label }); }
