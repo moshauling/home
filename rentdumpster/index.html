@@ -875,7 +875,12 @@
           // send_to is needed here: without it, this event reached dataLayer but no GA4 hit
           // was sent (confirmed on the live page; this page loads GA4 via both gtag.js and GTM).
           gtag('event', 'dumpster_lp_form_submit', { duration: selectedDuration, send_to: 'G-6NQ1R26L3F' });
-          gtag('event', 'conversion', { send_to: 'AW-16676073753/91qGCPT91LYdEJni4o8-' });
+          // Enhanced conversions: pass the lead's email + phone (gtag hashes them) before the conversion fires.
+          const ecDigits = (get('phone') || '').replace(/\D/g, '');
+          const ecPhone = ecDigits.length === 10 ? '+1' + ecDigits : (ecDigits.length === 11 && ecDigits[0] === '1' ? '+' + ecDigits : undefined);
+          gtag('set', 'user_data', { email: get('email') || undefined, phone_number: ecPhone });
+          // Google Ads conversion: "Dumpster Rental - Booking Form (rentdumpster)" (Book appointment, primary)
+          gtag('event', 'conversion', { send_to: 'AW-16676073753/LsDfCL_crLwdEJni4o8-' });
         }
         if (typeof fbq !== 'undefined') { fbq('track', 'Lead', { content_name: info.label }); }
         document.getElementById('book-form-wrap').style.display = 'none';
