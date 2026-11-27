@@ -899,5 +899,14 @@
       }
     }
   </script>
+  <script>
+    // Google Ads: count taps on any tel: link as "Rent Dumpster - Click to Call (Web)" (Phone call leads)
+    document.addEventListener('click', function (e) {
+      var link = e.target.closest ? e.target.closest('a[href^="tel:"]') : null;
+      if (!link || typeof gtag !== 'function') return;
+      gtag('event', 'conversion', { send_to: 'AW-16676073753/L-2lCOez5MAdEJni4o8-' });
+      gtag('event', 'dumpster_lp_call_click', { link_class: link.className || 'inline', send_to: 'G-6NQ1R26L3F' });
+    });
+  </script>
 </body>
 </html>
